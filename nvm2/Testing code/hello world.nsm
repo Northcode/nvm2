@@ -1,0 +1,29 @@
+# HELLO WORLD NSM
+
+LD DA :helloworld
+LD A :printstr
+INT 0x01
+LD A :terminate
+INT 0x00
+
+DB printstr 0x01
+DB terminate 0x00
+DSTR helloworld 'Hello, World!\0'
+
+# CORE Interupts (0x00)
+# 0x00 Terminate
+# 0x01 Break
+# 0x02 LOAD DEVICE
+# 0x03 UNLOAD DEVICE
+# 0x04 LOAD DEVICE DATA TO RAM (needs to be storage device)
+# 0x05 UNLOAD FROM RAM
+
+# TXT Interupts (0x01)
+# 0x00 print ch
+# 0x01 print str
+# 0x02 print int
+# 0x03 print float
+# 0x04 read ch
+# 0x05 read str
+# 0x06 read int
+# 0x07 read float

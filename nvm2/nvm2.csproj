@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1B881F73-4FBC-47B1-A1AB-9259445184D8}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>nvm2</RootNamespace>
+    <AssemblyName>nvm2</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="gtk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
+      <Package>gtk-sharp-2.0</Package>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Main.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Virtual Machine\vm.cs" />
+    <Compile Include="Virtual Machine\Devices\Memory.cs" />
+    <Compile Include="Virtual Machine\Devices\CPU.cs" />
+    <Compile Include="Virtual Machine\Devices\StorageDevice.cs" />
+    <Compile Include="Virtual Machine\Devices\ComputeDevice.cs" />
+    <Compile Include="Virtual Machine\Devices\HDI.cs" />
+    <Compile Include="Virtual Machine\Devices\VirtualDataDisk.cs" />
+    <Compile Include="Virtual Machine\Pager.cs" />
+    <Compile Include="Virtual Machine\CallStack.cs" />
+    <Compile Include="Virtual Machine\VMDevice.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="app.desktop">
+      <DeployService-TargetDirectoryId>Linux.DesktopApplications</DeployService-TargetDirectoryId>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Virtual Machine\" />
+    <Folder Include="Testing code\" />
+    <Folder Include="Virtual Machine\Devices\" />
+    <Folder Include="Docs\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Docs\opcodes.txt" />
+    <None Include="Testing code\hello world.nsm" />
+  </ItemGroup>
+</Project>

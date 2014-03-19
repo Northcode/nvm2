@@ -1,0 +1,46 @@
+### NSM Opcodes ###
+
+--- Register opcodes
+LD B A  -- Load value A to register B
+MV B A  -- Copy value from register A to B
+
+--- Stack opcodes
+PUSH X	-- Push value X onto stack
+PSHR X	-- Push register X onto stack
+POP X	-- Pop 
+value from stack to register X
+
+--- RAM opcodes
+READB X	-- Read byte from ram at address of register DA to register X
+READI X	-- Read int from ram at address of register DA to register X
+READF X -- Read float from ram at address of register DA to register X
+WRITB X	-- Write byte from register X to ram at address of register DA
+WRITI X -- Write int from register X to ram at address of register DA
+WRITI X -- Write float from register X to ram at address of register DA
+LODS	-- Load string to stack from ram at address of register DA
+POPS	-- Write string to ram from stack at address of register DA
+
+--- Math opcodes results are stored in result register
+ADD A B	-- Add A and B
+SUB A B	-- Subtract B from A
+MUL A B -- Multiply A and B
+DIV A B -- Divide A by B
+MOD A B -- A modulo B
+POW A B -- A to the power of B
+SQRT A	-- Square root of A
+
+--- Jumping opcodes
+JMP X	-- Jump to address X
+CALL X	-- Call address X
+JMPR	-- Jump to address of register DA
+CALLR	-- Call address of register DA
+
+--- Allocation opcodes
+MALLOC	-- Allocate memory of size AX store address in DA register
+
+--- Paging opcodes
+ALLOC_PD	-- Allocate page directory, store address in DA
+ALLOC_PT	-- Allocate PT store address in DA
+ALLOC_PAGE	-- Allocate new page, store address in DA
+ADD_PAGE	-- Add page from address DA to current page table
+EXIT_PAGE	-- Terminates current page and page table, returns control to prevoius PT, if none found exits page mode.
