@@ -8,34 +8,48 @@ namespace nvm2
 	{
 		public const int FRAME_SIZE = 4 * 1024;
 
-		public Frame (uint Address)
+		Memory ram;
+
+		public Frame (uint Address,Memory RAM)
 		{
 			this.Address = Address;
+			this.ram = RAM;
 		}
 
 		public uint Address {get;set;}
-	}
-
-	public struct MemBlock
-	{
-		public uint address;
-		public uint size;
+		public bool IsFree { get; set; }
 	}
 
 	public class Memory : StorageDevice
 	{
 		byte[] data;
 		uint m_pointer;
+		Frame[] frames;
 
 		public Memory (int size)
 		{
 			data = new byte[size];
 			m_pointer = 0;
+			frames = new Frame[size/Frame.FRAME_SIZE];
+			for (int i = 0; i < frames.Length; i++) {
+				frames[i] = new Frame((uint)(i * Frame.FRAME_SIZE),this) { IsFree = true };
+			}
 		}
 
-		public Frame GetFrame (int i)
+		// ------ FRAME MANAGEMENT ------
+
+		public Frame getFrame (int i)
 		{
-			return new Frame((uint)(i * Frame.FRAME_SIZE));
+			return frames[i];
+		}
+
+		public Frame findFreeFrame ()
+		{
+			for (int i = 0; i < frames.Length; i++) {
+				if(frames[i].IsFree)
+					return frames[i];
+			}
+			throw new Exception("No free frame found!");
 		}
 
 		// ------ READ / WRITE FUNCTIONS ----

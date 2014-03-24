@@ -39,16 +39,16 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="Virtual Machine\vm.cs" />
-    <Compile Include="Virtual Machine\Devices\Memory.cs" />
-    <Compile Include="Virtual Machine\Devices\CPU.cs" />
-    <Compile Include="Virtual Machine\Devices\StorageDevice.cs" />
-    <Compile Include="Virtual Machine\Devices\ComputeDevice.cs" />
-    <Compile Include="Virtual Machine\Devices\HDI.cs" />
-    <Compile Include="Virtual Machine\Devices\VirtualDataDisk.cs" />
-    <Compile Include="Virtual Machine\Pager.cs" />
-    <Compile Include="Virtual Machine\CallStack.cs" />
-    <Compile Include="Virtual Machine\VMDevice.cs" />
+    <Compile Include="virtual-machine\CallStack.cs" />
+    <Compile Include="virtual-machine\Pager.cs" />
+    <Compile Include="virtual-machine\VMDevice.cs" />
+    <Compile Include="virtual-machine\vm.cs" />
+    <Compile Include="virtual-machine\devices\CPU.cs" />
+    <Compile Include="virtual-machine\devices\ComputeDevice.cs" />
+    <Compile Include="virtual-machine\devices\HDI.cs" />
+    <Compile Include="virtual-machine\devices\Memory.cs" />
+    <Compile Include="virtual-machine\devices\StorageDevice.cs" />
+    <Compile Include="virtual-machine\devices\VirtualDataDisk.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop">
@@ -57,13 +57,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Folder Include="Virtual Machine\" />
-    <Folder Include="Testing code\" />
-    <Folder Include="Virtual Machine\Devices\" />
-    <Folder Include="Docs\" />
+    <Folder Include="virtual-machine\" />
+    <Folder Include="test-code\" />
+    <Folder Include="docs\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Docs\opcodes.txt" />
-    <None Include="Testing code\hello world.nsm" />
+    <None Include="test-code\hello world.nsm" />
+    <None Include="docs\opcodes.txt" />
   </ItemGroup>
 </Project>

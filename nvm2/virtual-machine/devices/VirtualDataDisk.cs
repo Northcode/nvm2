@@ -17,7 +17,7 @@ namespace nvm2
 
 		public void Load (byte[] Data)
 		{
-			Data.CopyTo(data,0);
+			data = Data;
 		}
 	}
 }

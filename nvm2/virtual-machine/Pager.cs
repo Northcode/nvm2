@@ -24,7 +24,7 @@ namespace nvm2
 
 			PageDirectory = new PageDirectoryEntry[PDSize];
 			for (int i = 0; i < PDSize; i++) {
-				PageDirectory[i] = new PageDirectoryEntry() { PTAddress = 0, AccessLevel = 0, InUse = 0 };
+				PageDirectory[i] = new PageDirectoryEntry() { PTAddress = 0, AccessLevel = false, InUse = false };
 			}
 		}
 	}

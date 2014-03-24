@@ -13,7 +13,7 @@ namespace nvm2
 		Memory ram;
 		HDI hdi;
 		VirtualDataDisk disk0;
-
+		
 		//Registers
 		public byte A; // "action" register, used in interupts
 		public byte B; // "char" register, used to hold byte sized data

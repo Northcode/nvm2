@@ -2,7 +2,7 @@ using System;
 
 namespace nvm2
 {
-	public class StorageDevice : IIODevice
+	public class StorageDevice : VMDevice
 	{
 		public StorageDevice ()
 		{
