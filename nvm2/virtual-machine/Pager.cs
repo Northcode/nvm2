@@ -16,14 +16,17 @@ namespace nvm2
 	{
 		public const int PAGE_TABLE_SIZE = 512;
 
-		vm machine;
+		public const bool PAGE_KERNEL_MODE = true;
+		public const bool PAGE_USER_MODE = false;
+
+		//vm machine;
 		Memory ram;
 
 		PageDirectoryEntry[] PageDirectory;
 
-		public Pager (vm Machine, Memory RAM, int PDSize)
+		public Pager (Memory RAM, int PDSize)
 		{
-			machine = Machine;
+			//machine = Machine;
 			ram = RAM;
 
 			PageDirectory = new PageDirectoryEntry[PDSize];
@@ -32,12 +35,17 @@ namespace nvm2
 			}
 		}
 
+		public PageDirectoryEntry getEntry (int i)
+		{
+			return PageDirectory[i];
+		}
+
 		public int CreatePageEntry (bool mode)
 		{
 			//Declare stuff
 			int index = 0;
 			//Find free entry in page directory
-			PageDirectoryEntry entry = null;
+			PageDirectoryEntry entry = new PageDirectoryEntry();
 			for (int i = 0; i < PageDirectory.Length; i++) {
 				if (!PageDirectory[i].InUse) {
 					entry = PageDirectory[i];
@@ -53,6 +61,7 @@ namespace nvm2
 			entry.InUse = true;
 			//Write page table to ram for entry
 			WritePageTable(entry);
+			PageDirectory[index] = entry;
 			return index;
 		}
 
@@ -87,7 +96,7 @@ namespace nvm2
 				ram.Write((uint)(addr + (i*4)), 0);
 			}
 			//Write first page address start
-			ram.Write(addr + 4,addr + PAGE_TABLE_SIZE + 4);
+			ram.Write(addr,addr + PAGE_TABLE_SIZE + 4);
 		}
 
 		public uint GetPageDirectoryEntrySize(PageDirectoryEntry entry) {
@@ -122,11 +131,36 @@ namespace nvm2
 
 		public void SetupMemoryAllocation(PageDirectoryEntry entry) {
 			// Get address
-			uint addr = entry.PTAddress + PAGE_TABLE_SIZE;
+			//uint addr = entry.PTAddress + PAGE_TABLE_SIZE;
 			// Write free pointer
 			ram.Write(entry.heap_pointer,entry.heap_pointer);
 			ram.Write(entry.heap_pointer + 4,GetPageDirectoryEntrySize(entry));
 		}
+
+		public void AddPage (PageDirectoryEntry entry)
+		{
+			//Find free frame
+			Frame freeFrame = ram.findFreeFrame();
+			freeFrame.IsFree = false;
+			//Add frame to PT
+			for (int i = 0; i < Pager.PAGE_TABLE_SIZE; i++) {
+				if (ram.ReadUInt((uint)(entry.PTAddress + i * 4)) == 0) {
+					ram.Write((uint)(entry.PTAddress + i * 4),freeFrame.Address);
+					break;
+				}
+			}
+		}		
+
+		public void DumpPageTable (PageDirectoryEntry entry)
+		{
+			for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
+				uint addr = ram.ReadUInt((uint)(entry.PTAddress + i * 4));
+				if (addr != 0) {
+					Console.WriteLine(addr);
+				}
+			}
+		}
+
 	}
 }
 
