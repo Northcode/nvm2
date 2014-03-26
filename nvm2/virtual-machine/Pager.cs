@@ -69,7 +69,7 @@ namespace nvm2
 			//Read pages
 			for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
 				uint frameAddr = ram.ReadUInt((uint)(addr + (i*4)));
-				int frameindex = (int)Math.Floor((float)(frameAddr / Frame.FRAME_SIZE));
+				int frameindex = (int)(frameAddr / Frame.FRAME_SIZE);
 				Frame frame = ram.getFrame(frameindex);
 				frame.IsFree = true; // Set frame to free, clears the frame
 			}
@@ -87,6 +87,19 @@ namespace nvm2
 			ram.Write(addr,addr + 512);
 		}
 
+		public uint TranslateVitrualAddress(uint address, PageDirectoryEntry entry) {
+			// Get address
+			uint ptaddr = entry.PTAddress;
+			// Get Page id
+			int page = address / Frame.FRAME_SIZE;
+			int offset = address - page * Frame.FRAME_SIZE;
+
+			// Get page table entry address
+			uint pageaddr = ram.ReadUInt((uint)(ptaddr + (page * 4)));
+
+			// Get address
+			return pageaddr + offset;
+		}
 	}
 }
 
