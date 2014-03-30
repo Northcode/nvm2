@@ -203,7 +203,7 @@ namespace nvm2
 			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry); ) {
 				uint nextblock = ram.ReadUInt(TranslateVitrualAddress(addr, entry)); //read address of next free block
 				uint blocksize = ram.ReadUInt(TranslateVitrualAddress(addr + 4, entry)); //read size of current free block
-				if (blocksize > size) {
+				if (blocksize >= size) {
 					uint newsize = blocksize - size; //get new size of free block
 					uint newaddr = addr + size; //get new address of free block
 					if (newsize > 1) { //if size <= 1, block is gone cause we can't store the next block pointer
