@@ -37,6 +37,10 @@ namespace nvm2
 			uint testalloc2 = pager.Malloc(4u,p1);
 			test.Write(pager.TranslateVitrualAddress(testalloc2,p1),10);
 			print("int 10 at:" + testalloc2);
+			pager.free(testalloc2,4u,p1);
+			uint testalloc3 = pager.Malloc(4u,p1);
+			test.Write(pager.TranslateVitrualAddress(testalloc2,p1),15);
+			print("int 15 at:" + testalloc3);
 		}
 	}
 }

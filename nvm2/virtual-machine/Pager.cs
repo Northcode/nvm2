@@ -206,7 +206,7 @@ namespace nvm2
 				if (blocksize > size) {
 					uint newsize = blocksize - size; //get new size of free block
 					uint newaddr = addr + size; //get new address of free block
-					if (newsize > 0) { //if size == 0, block is gone
+					if (newsize > 1) { //if size <= 1, block is gone cause we can't store the next block pointer
 						ram.Write(TranslateVitrualAddress(newaddr,entry),nextblock); // set next block pointer
 						ram.Write(TranslateVitrualAddress(newaddr + 4,entry),newsize); //write new size of new freeblock
 						ram.Write(TranslateVitrualAddress(lastaddr,entry),TranslateVitrualAddress(newaddr,entry)); //set pointer of last block to point to this new one
@@ -214,9 +214,9 @@ namespace nvm2
 							entry.free_pointer = newaddr; //update first freepointer
 						}
 					}
-					else
+					else //set pointer to skip unexisting block
 					{
-						ram.Write(TranslateVitrualAddress(lastaddr,entry),TranslateVitrualAddress(nextblock,entry)); //set pointer to skip unexisting block
+						ram.Write(TranslateVitrualAddress(lastaddr,entry),TranslateVitrualAddress(nextblock,entry)); 
 					}
 					return addr; //return address of allocated space
 				}
@@ -227,6 +227,39 @@ namespace nvm2
 				isfirst = false;
 			}
 			throw new OutOfMemoryException(String.Format("No more free blocks to allocate memory in page table: {0}",entry.PTAddress));
+		}
+
+		public void free(uint address,uint size, PageDirectoryEntry entry)
+		{
+			uint lastaddr = entry.free_pointer;
+			bool isfirst = true;
+			//check if block we are freeing is before the first in the freelist
+			if (address < lastaddr) {
+				entry.free_pointer = address; //set first freelist pointer to be this block
+				ram.Write(TranslateVitrualAddress(address,entry),lastaddr); //write previous freelist pointer as the next one
+				ram.Write(TranslateVitrualAddress(address + 4, entry), size); //write size of new block
+				return; //job done!
+			}
+			//if not this is the first one, complicated shit needs to happen:
+			uint finaladdr = entry.free_pointer;
+			//loop through freelist to find where we need to put the pointers
+			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry);) {
+				uint nextblock = ram.ReadUInt(TranslateVitrualAddress(addr, entry)); //read address of next free block
+				uint blocksize = ram.ReadUInt(TranslateVitrualAddress(addr + 4, entry)); //read size of current free block
+				if (address < nextblock && address > lastaddr) { //block is between current and next block
+					ram.Write(TranslateVitrualAddress(lastaddr,entry), address); //write new pointer to prevoius block
+					ram.Write(TranslateVitrualAddress(address,entry), nextblock); //write pointer to next block
+					ram.Write(TranslateVitrualAddress(address + 4,entry), size); //write size of new block
+				}
+				finaladdr = addr;
+			}
+
+			//address is after last block
+			if (address > finaladdr) {
+				ram.Write(TranslateVitrualAddress(lastaddr,entry),address); //write pointer to new block
+				ram.Write(TranslateVitrualAddress(address,entry),0); //write null pointer
+				ram.Write(TranslateVitrualAddress(address + 4,entry),size); //write size of new pointer
+			}
 		}
 	}
 }
