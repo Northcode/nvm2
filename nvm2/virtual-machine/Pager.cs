@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace nvm2
 {
-	public struct PageDirectoryEntry
+	public class PageDirectoryEntry
 	{
 		public uint PTAddress;
 		public bool AccessLevel;
@@ -198,6 +198,7 @@ namespace nvm2
 		/// </returns>
 		public uint Malloc(uint size,PageDirectoryEntry entry) {
 			uint lastaddr = entry.free_pointer; //last free block pointer
+			bool isfirst = true;
 			//loop through freelist , check for large enough chunk
 			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry); ) {
 				uint nextblock = ram.ReadUInt(TranslateVitrualAddress(addr, entry)); //read address of next free block
@@ -209,6 +210,9 @@ namespace nvm2
 						ram.Write(TranslateVitrualAddress(newaddr,entry),nextblock); // set next block pointer
 						ram.Write(TranslateVitrualAddress(newaddr + 4,entry),newsize); //write new size of new freeblock
 						ram.Write(TranslateVitrualAddress(lastaddr,entry),TranslateVitrualAddress(newaddr,entry)); //set pointer of last block to point to this new one
+						if (isfirst) {
+							entry.free_pointer = newaddr; //update first freepointer
+						}
 					}
 					else
 					{
@@ -216,7 +220,13 @@ namespace nvm2
 					}
 					return addr; //return address of allocated space
 				}
+				if (nextblock == 0) { // there is no next block, break from loop
+					break;
+				}
+				addr = nextblock;
+				isfirst = false;
 			}
+			throw new OutOfMemoryException(String.Format("No more free blocks to allocate memory in page table: {0}",entry.PTAddress));
 		}
 	}
 }
