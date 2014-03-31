@@ -110,7 +110,6 @@ namespace nvm2
 			return count * Frame.FRAME_SIZE;
 		}
 
-		//TODO: Reaname this to getVAT
 		public uint getVAT(uint address, PageDirectoryEntry entry) {
 			// Get address
 			uint ptaddr = entry.PTAddress;
@@ -168,10 +167,10 @@ namespace nvm2
 		/// <param name='heap_pointer'>
 		/// New heap_pointer, relative address
 		/// </param>
-		public void SetupMemory(PageDirectoryEntry entry, uint stack_pointer, uint heap_pointer) {
-			entry.stack_pointer = stack_pointer;
-			entry.base_pointer = stack_pointer;
-			entry.heap_pointer = heap_pointer;
+		public void SetupMemory(PageDirectoryEntry entry, uint stack_start, uint heap_start) {
+			entry.stack_pointer = heap_start - 1;
+			entry.base_pointer = stack_start;
+			entry.heap_pointer = heap_start;
 		}
 
 		/// <summary>
@@ -333,70 +332,82 @@ namespace nvm2
 		//-------- STACK OPERATIONS --------
 		#region stack
 		public void Push(byte data,PageDirectoryEntry entry) {
-			if (entry.stack_pointer + 1 > entry.heap_pointer) {
+			if (entry.stack_pointer -1 < entry.base_pointer) {
 				throw new Exception("No more space in stack!");
 			}
+			entry.stack_pointer--;
 			ram.Write(getVAT(entry.stack_pointer,entry),data);
-			entry.stack_pointer++;
 		}
 		public void Push(int data,PageDirectoryEntry entry) {
-			if (entry.stack_pointer + 4 > entry.heap_pointer) {
+			if (entry.stack_pointer - 4 < entry.base_pointer) {
 				throw new Exception("No more space in stack!");
 			}
+			entry.stack_pointer -= 4;
 			ram.Write(getVAT(entry.stack_pointer,entry),data);
-			entry.stack_pointer += 4;
 		}
 		public void Push(uint data,PageDirectoryEntry entry) {
-			if (entry.stack_pointer + 4 > entry.heap_pointer) {
+			if (entry.stack_pointer - 4 < entry.base_pointer) {
 				throw new Exception("No more space in stack!");
 			}
+			entry.stack_pointer -= 4;
 			ram.Write(getVAT(entry.stack_pointer,entry),data);
-			entry.stack_pointer += 4;
 		}
 		public void Push(float data,PageDirectoryEntry entry) {
-			if (entry.stack_pointer + 4 > entry.heap_pointer) {
+			if (entry.stack_pointer - 4 < entry.base_pointer) {
 				throw new Exception("No more space in stack!");
 			}
+			entry.stack_pointer -= 4;
 			ram.Write(getVAT(entry.stack_pointer,entry),data);
-			entry.stack_pointer += 4;
 		}
 		public void Push(string data,PageDirectoryEntry entry) {
-			if (entry.stack_pointer + data.Length + 1 > entry.heap_pointer) {
+			if (entry.stack_pointer - (data.Length + 4) < entry.base_pointer) {
 				throw new Exception("No more space in stack!");
 			}
+			entry.stack_pointer -= (uint)(data.Length + 4);
 			ram.Write(getVAT(entry.stack_pointer,entry),data);
-			entry.stack_pointer += (uint)data.Length + 1;
 		}
 
 		public byte PopByte(PageDirectoryEntry entry) {
-			if (entry.stack_pointer - 1 < entry.base_pointer) {
+			if (entry.stack_pointer + 1 >= entry.heap_pointer) {
 				throw new Exception("No more items in stack!");
 			}
-			entry.stack_pointer--;
-			return ram.Read(getVAT(entry.stack_pointer,entry));
+			byte val = ram.Read(getVAT(entry.stack_pointer,entry));
+			entry.stack_pointer++;
+			return val;
 		}
 		public int PopInt(PageDirectoryEntry entry) {
-			if (entry.stack_pointer - 4 < entry.base_pointer) {
+			if (entry.stack_pointer + 4 >= entry.heap_pointer) {
 				throw new Exception("No more items in stack!");
 			}
-			entry.stack_pointer -= 4;
-			return ram.ReadInt(getVAT(entry.stack_pointer,entry));
+			int val = ram.ReadInt(getVAT(entry.stack_pointer,entry));
+			entry.stack_pointer += 4;
+			return val;
 		}
 		public uint PopUInt(PageDirectoryEntry entry) {
-			if (entry.stack_pointer - 4 < entry.base_pointer) {
+			if (entry.stack_pointer + 4 >= entry.heap_pointer) {
 				throw new Exception("No more items in stack!");
 			}
-			entry.stack_pointer--;
-			return ram.ReadUInt(getVAT(entry.stack_pointer,entry));
+			uint val = ram.ReadUInt(getVAT(entry.stack_pointer,entry));
+			entry.stack_pointer += 4;
+			return val;
 		}
 		public float PopFloat(PageDirectoryEntry entry) {
-			if (entry.stack_pointer - 4 < entry.base_pointer) {
+			if (entry.stack_pointer + 4 >= entry.heap_pointer) {
 				throw new Exception("No more items in stack!");
 			}
-			entry.stack_pointer--;
-			return ram.ReadFloat(getVAT(entry.stack_pointer,entry));
+			float val = ram.ReadFloat(getVAT(entry.stack_pointer,entry));
+			entry.stack_pointer += 4;
+			return val;
 		}
-		//TODO: add pop string method
+		public string PopString (PageDirectoryEntry entry) {
+			uint size = ram.ReadUInt(getVAT(entry.stack_pointer,entry));
+			if (entry.stack_pointer + size + 4 >= entry.heap_pointer) {
+				throw new Exception("No more items in stack!");
+			}
+			string val = ram.ReadString(getVAT(entry.stack_pointer,entry));
+			entry.stack_pointer	+= size + 4;
+			return val;
+		}
 
 		#endregion
 	}

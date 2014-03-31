@@ -102,7 +102,7 @@ namespace nvm2
 
         public void Write(uint address, string value)
         {
-            Write((uint)(address), value.Length);
+            Write((uint)(address), (uint)value.Length);
 			address += 4;
             for (int i = 0; i < value.Length; i++)
             {

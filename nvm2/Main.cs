@@ -50,51 +50,114 @@ namespace nvm2
 			*/
 
 			string cmd = "";
+			int selected = -1;
 			while ((cmd = Console.ReadLine()) != "") {
 				string[] sargs = cmd.Split(' ');
-				if(sargs[0] == "mkpt") {
-					Console.WriteLine("Created page table at: " + pager.CreatePageEntry(Pager.PAGE_USER_MODE));
-				} else if (sargs[0] == "rmpt") {
-					int pt = Convert.ToInt32(sargs[1]);
-					pager.FreePageEntry(pager.getEntry(pt));
-					Console.WriteLine("Removed page: " + sargs[1]);
-				} else if (sargs[0] == "addpage") {
-					int pt = Convert.ToInt32(sargs[1]);
-					pager.AddPage(pager.getEntry(pt));
-					Console.WriteLine("Added page");
-				} else if (sargs[0] == "setmem") {
-					int pt = Convert.ToInt32(sargs[1]);
-					uint stk = Convert.ToUInt32(sargs[2]);
-					uint hep = Convert.ToUInt32(sargs[3]);
-					pager.SetupMemory(pager.getEntry(pt),stk,hep);
-					pager.SetupMemoryAllocation(pager.getEntry(pt));
-				} else if (sargs[0] == "malloc") {
-					int pt = Convert.ToInt32(sargs[1]);
-					uint size = Convert.ToUInt32(sargs[2]);
-					uint addr = pager.Malloc(size,pager.getEntry(pt));
-					Console.WriteLine("Allocated memory at: " + addr);
-				} else if (sargs[0] == "free") {
-					int pt = Convert.ToInt32(sargs[1]);
-					uint addr = Convert.ToUInt32(sargs[2]);
-					uint size = Convert.ToUInt32(sargs[3]);
-					pager.free(addr,size,pager.getEntry(pt));
-					Console.WriteLine("Freed up space");
-				} else if (sargs[0] == "dmppt") {
-					int pt = Convert.ToInt32(sargs[1]);
-					Console.WriteLine("Page table " + pt + " at: " + pager.getEntry(pt).PTAddress);
-					pager.DumpPageTable(pager.getEntry(pt));
-				} else if (sargs[0] == "dmpfl") {
-					int pt = Convert.ToInt32(sargs[1]);
-					pager.DumpFreeList(pager.getEntry(pt));
-				} else if (sargs[0] == "pushi") {
-					int pt = Convert.ToInt32(sargs[1]);
-					int val = Convert.ToInt32(sargs[2]);
-					pager.Push(val,pager.getEntry(pt));
-				} else if (sargs[0] == "popi") {
-					int pt = Convert.ToInt32(sargs[1]);
-					Console.WriteLine(pager.PopInt(pager.getEntry(pt)));
-				} else if (sargs[0] == "exit") {
-					break;
+				try {
+					if(sargs[0] == "mkpt") {
+						Console.WriteLine("Created page table at: " + pager.CreatePageEntry(Pager.PAGE_USER_MODE));
+					} else if (sargs[0] == "rmpt") {
+						int pt = selected;
+						selected = -1;
+						pager.FreePageEntry(pager.getEntry(pt));
+						Console.WriteLine("Removed page: " + sargs[1]);
+					} else if(sargs[0] == "select") {
+						selected = Convert.ToInt32(sargs[1]);
+						Console.WriteLine("selected page table " + selected);
+					} else if (sargs[0] == "addpage") {
+						int pt = selected; 
+						pager.AddPage(pager.getEntry(pt));
+						Console.WriteLine("Added page");
+					} else if (sargs[0] == "setmem") {
+						int pt = selected; 
+						uint stk = Convert.ToUInt32(sargs[1]);
+						uint hep = Convert.ToUInt32(sargs[2]);
+						pager.SetupMemory(pager.getEntry(pt),stk,hep);
+						pager.SetupMemoryAllocation(pager.getEntry(pt));
+					} else if (sargs[0] == "malloc") {
+						int pt = selected; 
+						uint size = Convert.ToUInt32(sargs[1]);
+						uint addr = pager.Malloc(size,pager.getEntry(pt));
+						Console.WriteLine("Allocated memory at: " + addr);
+					} else if (sargs[0] == "free") {
+						int pt = selected; 
+						uint addr = Convert.ToUInt32(sargs[1]);
+						uint size = Convert.ToUInt32(sargs[2]);
+						pager.free(addr,size,pager.getEntry(pt));
+						Console.WriteLine("Freed up space");
+					} else if (sargs[0] == "dmppt") {
+						int pt = selected; 
+						Console.WriteLine("Page table " + pt + " at: " + pager.getEntry(pt).PTAddress);
+						pager.DumpPageTable(pager.getEntry(pt));
+					} else if (sargs[0] == "dmpfl") {
+						int pt = selected; 
+						pager.DumpFreeList(pager.getEntry(pt));
+					} else if (sargs[0] == "pushb") {
+						int pt = selected; 
+						byte val = Convert.ToByte(sargs[1]);
+						pager.Push(val,pager.getEntry(pt));
+					} else if (sargs[0] == "pushi") {
+						int pt = selected; 
+						int val = Convert.ToInt32(sargs[1]);
+						pager.Push(val,pager.getEntry(pt));
+					} else if (sargs[0] == "pushui") {
+						int pt = selected;
+						uint val = Convert.ToUInt32(sargs[1]);
+						pager.Push(val,pager.getEntry(pt));
+					} else if (sargs[0] == "pushf") {
+						int pt = selected;
+						float val = (float)Convert.ToDecimal(sargs[1]);
+						pager.Push(val,pager.getEntry(pt));
+					} else if (sargs[0] == "pushs") {
+						int pt = selected;
+						string val = String.Join(" ",sargs);
+						val = val.Substring(val.IndexOf('\'') + 1,val.LastIndexOf('\'') - (val.IndexOf('\'') + 1));
+						pager.Push(val,pager.getEntry(pt));
+					} else if (sargs[0] == "popb") {
+						int pt = selected;
+						Console.WriteLine(pager.PopByte(pager.getEntry(pt)));
+					} else if (sargs[0] == "popi") {
+						int pt = selected;
+						Console.WriteLine(pager.PopInt(pager.getEntry(pt)));
+					} else if (sargs[0] == "popui") {
+						int pt = selected;
+						Console.WriteLine(pager.PopUInt(pager.getEntry(pt)));
+					} else if (sargs[0] == "popf") {
+						int pt = selected;
+						Console.WriteLine(pager.PopFloat(pager.getEntry(pt)));
+					} else if (sargs[0] == "pops") {
+						int pt = selected;
+						Console.WriteLine(pager.PopString(pager.getEntry(pt)));
+					} else if(sargs[0] == "vat") {
+						uint val = Convert.ToUInt32(sargs[1]);
+						Console.WriteLine(pager.getVAT(val,pager.getEntry(selected)));
+					} else if (sargs[0] == "writeb") {
+						uint addr = Convert.ToUInt32(sargs[1]);
+						byte val = Convert.ToByte(sargs[2]);
+						test.Write(addr,val);
+					} else if (sargs[0] == "writei") {
+						uint addr = Convert.ToUInt32(sargs[1]);
+						int val = Convert.ToInt32(sargs[2]);
+						test.Write(addr,val);
+					} else if (sargs[0] == "writeui") {
+						uint addr = Convert.ToUInt32(sargs[1]);
+						uint val = Convert.ToUInt32(sargs[2]);
+						test.Write(addr,val);
+					} else if (sargs[0] == "writef") {
+						uint addr = Convert.ToUInt32(sargs[1]);
+						float val = (float)Convert.ToDecimal(sargs[2]);
+						test.Write(addr,val);
+					} else if (sargs[0] == "writes") {
+						uint addr = Convert.ToUInt32(sargs[1]);
+						string val = sargs[2];
+						test.Write(addr,val);
+					} else if (sargs[0] == "exit") {
+						break;
+					}
+				} catch (IndexOutOfRangeException) {
+					Console.WriteLine("Please select a page table!");
+				} catch (Exception ex) {
+					Console.WriteLine("Error: " + ex.Message);
 				}
 			}
 		}
