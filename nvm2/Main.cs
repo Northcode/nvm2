@@ -33,14 +33,18 @@ namespace nvm2
 			//test allocate an integer
 			uint testalloc = pager.Malloc(4u,p1);
 			test.Write(pager.TranslateVitrualAddress(testalloc,p1),5);
-			print("int 5 at: " + testalloc);
+			print("int 5 at: " + testalloc + " @ " + pager.TranslateVitrualAddress(testalloc,p1));
+			pager.DumpFreeList(p1);
 			uint testalloc2 = pager.Malloc(4u,p1);
 			test.Write(pager.TranslateVitrualAddress(testalloc2,p1),10);
-			print("int 10 at:" + testalloc2);
+			print("int 10 at:" + testalloc2 + " @ " + pager.TranslateVitrualAddress(testalloc2,p1));
+			pager.DumpFreeList(p1);
 			pager.free(testalloc2,4u,p1);
+			pager.DumpFreeList(p1);
 			uint testalloc3 = pager.Malloc(4u,p1);
-			test.Write(pager.TranslateVitrualAddress(testalloc2,p1),15);
-			print("int 15 at:" + testalloc3);
+			test.Write(pager.TranslateVitrualAddress(testalloc3,p1),15);
+			print("int 15 at:" + testalloc3 + " @ " + pager.TranslateVitrualAddress(testalloc3,p1));
+			pager.DumpFreeList(p1);
 		}
 	}
 }

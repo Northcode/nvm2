@@ -184,6 +184,15 @@ namespace nvm2
 			ram.Write(TranslateVitrualAddress(entry.heap_pointer,entry) + 4,(uint)(GetPageDirectoryEntrySize(entry) - entry.heap_pointer)); //Write size of free block (total size of heap)
 		}
 
+		public void DumpFreeList(PageDirectoryEntry entry) {
+			uint addr = entry.free_pointer;
+			while (addr != 0) {
+				uint size = ram.ReadUInt(TranslateVitrualAddress(addr + 4,entry));
+				Console.WriteLine(addr + " - " + size);
+				addr = ram.ReadUInt(TranslateVitrualAddress(addr,entry));
+			}
+		}
+
 		/// <summary>
 		/// Allocate a new block of memory in the page table with the specified size
 		/// </summary>
@@ -206,7 +215,7 @@ namespace nvm2
 				if (blocksize >= size) {
 					uint newsize = blocksize - size; //get new size of free block
 					uint newaddr = addr + size; //get new address of free block
-					if (newsize > 1) { //if size <= 1, block is gone cause we can't store the next block pointer
+					if (newsize >= 8) { //if size < 8, block is gone cause we can't store the next block pointer
 						ram.Write(TranslateVitrualAddress(newaddr,entry),nextblock); // set next block pointer
 						ram.Write(TranslateVitrualAddress(newaddr + 4,entry),newsize); //write new size of new freeblock
 						ram.Write(TranslateVitrualAddress(lastaddr,entry),TranslateVitrualAddress(newaddr,entry)); //set pointer of last block to point to this new one
@@ -231,14 +240,26 @@ namespace nvm2
 
 		public void free(uint address,uint size, PageDirectoryEntry entry)
 		{
+			Console.WriteLine("freeing memory at address: " + address + " with size: " + size);
 			uint lastaddr = entry.free_pointer;
 			bool isfirst = true;
 			//check if block we are freeing is before the first in the freelist
 			if (address < lastaddr) {
-				entry.free_pointer = address; //set first freelist pointer to be this block
-				ram.Write(TranslateVitrualAddress(address,entry),lastaddr); //write previous freelist pointer as the next one
-				ram.Write(TranslateVitrualAddress(address + 4, entry), size); //write size of new block
-				return; //job done!
+				Console.WriteLine("Address is less than " + lastaddr);
+				if(address + 8 < lastaddr) {
+					entry.free_pointer = address; //set first freelist pointer to be this block
+					ram.Write(TranslateVitrualAddress(address,entry),lastaddr); //write previous freelist pointer as the next one
+					ram.Write(TranslateVitrualAddress(address + 4, entry), size); //write size of new block
+					return; //job done!
+				} else { //merge these blocks because they collide otherwise
+					Console.WriteLine("Free blocks adjecent, merging...");
+					uint nextaddr = ram.ReadUInt(TranslateVitrualAddress(lastaddr,entry)); //get the address of the next block
+					uint lastsize = ram.ReadUInt(TranslateVitrualAddress(lastaddr + 4,entry)); //read size of previous first block
+					ram.Write(TranslateVitrualAddress(address,entry),nextaddr); //write address of next block
+					uint newsize = size + lastsize;
+					ram.Write(TranslateVitrualAddress(address,entry),newsize); //write new size of merged freeblock
+					return; //done!
+				}
 			}
 			//if not this is the first one, complicated shit needs to happen:
 			uint finaladdr = entry.free_pointer;
@@ -250,6 +271,7 @@ namespace nvm2
 					ram.Write(TranslateVitrualAddress(lastaddr,entry), address); //write new pointer to prevoius block
 					ram.Write(TranslateVitrualAddress(address,entry), nextblock); //write pointer to next block
 					ram.Write(TranslateVitrualAddress(address + 4,entry), size); //write size of new block
+					return; //done!
 				}
 				finaladdr = addr;
 			}
