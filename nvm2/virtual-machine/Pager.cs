@@ -324,5 +324,15 @@ namespace nvm2
 				addr = nextblock;
 			}
 		}
+
+
+		//-------- STACK OPERATIONS --------
+		public void Push() {
+
+		}
+
+		public void Pull() {
+
+		}
 	}
 }
