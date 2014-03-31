@@ -66,11 +66,8 @@ namespace nvm2
 			return index;
 		}
 
-		public void FreePageEntry (int index)
+		public void FreePageEntry (PageDirectoryEntry entry)
 		{
-			//Get entry
-			PageDirectoryEntry entry = PageDirectory[index];
-
 			FreePageTable(entry);
 			entry.InUse = false;
 		}
@@ -111,6 +108,7 @@ namespace nvm2
 			return count * Frame.FRAME_SIZE;
 		}
 
+		//TODO: Reaname this to getVAT
 		public uint TranslateVitrualAddress(uint address, PageDirectoryEntry entry) {
 			// Get address
 			uint ptaddr = entry.PTAddress;
@@ -250,6 +248,7 @@ namespace nvm2
 					entry.free_pointer = address; //set first freelist pointer to be this block
 					ram.Write(TranslateVitrualAddress(address,entry),lastaddr); //write previous freelist pointer as the next one
 					ram.Write(TranslateVitrualAddress(address + 4, entry), size); //write size of new block
+					MergeFreeBlocks(entry);
 					return; //job done!
 				} else { //merge these blocks because they collide otherwise
 					Console.WriteLine("Free blocks adjecent, merging...");
@@ -258,6 +257,7 @@ namespace nvm2
 					ram.Write(TranslateVitrualAddress(address,entry),nextaddr); //write address of next block
 					uint newsize = size + lastsize;
 					ram.Write(TranslateVitrualAddress(address,entry),newsize); //write new size of merged freeblock
+					MergeFreeBlocks(entry);
 					return; //done!
 				}
 			}
@@ -267,22 +267,62 @@ namespace nvm2
 			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry);) {
 				uint nextblock = ram.ReadUInt(TranslateVitrualAddress(addr, entry)); //read address of next free block
 				uint blocksize = ram.ReadUInt(TranslateVitrualAddress(addr + 4, entry)); //read size of current free block
-				if (address < nextblock && address > lastaddr) { //block is between current and next block
-					ram.Write(TranslateVitrualAddress(lastaddr,entry), address); //write new pointer to prevoius block
-					ram.Write(TranslateVitrualAddress(address,entry), nextblock); //write pointer to next block
-					ram.Write(TranslateVitrualAddress(address + 4,entry), size); //write size of new block
-					return; //done!
+				if (address < nextblock && address > addr) { //block is between current and next block
+					Console.WriteLine("address between " + lastaddr + " and " + nextblock);
+					if(address + 8 < nextblock) {
+						ram.Write(TranslateVitrualAddress(addr,entry), address); //write new pointer to current block
+						ram.Write(TranslateVitrualAddress(address,entry), nextblock); //write pointer to next block
+						ram.Write(TranslateVitrualAddress(address + 4,entry), size); //write size of new block
+						MergeFreeBlocks(entry);
+						return; //done!
+					} else { //need to merge again...
+						Console.WriteLine("Free blocks adjecent, merging...");
+						uint nextsize = ram.ReadUInt(TranslateVitrualAddress(nextblock + 4,entry)); //read size of next block
+						uint dablockafter = ram.ReadUInt(TranslateVitrualAddress(nextblock,entry)); //read address of block after next block
+						uint newsize = size + nextsize;
+						ram.Write(TranslateVitrualAddress(address,entry),dablockafter); //write pointer to block after next block
+						ram.Write(TranslateVitrualAddress(address + 4,entry),newsize); //write new size
+						ram.Write(TranslateVitrualAddress(addr,entry), address); //write pointer to new block
+						MergeFreeBlocks(entry);
+						return; //done!
+					}
 				}
+				addr = nextblock;
 				finaladdr = addr;
 			}
 
 			//address is after last block
 			if (address > finaladdr) {
-				ram.Write(TranslateVitrualAddress(lastaddr,entry),address); //write pointer to new block
-				ram.Write(TranslateVitrualAddress(address,entry),0); //write null pointer
-				ram.Write(TranslateVitrualAddress(address + 4,entry),size); //write size of new pointer
+				if(address > finaladdr + 8) {
+					ram.Write(TranslateVitrualAddress(lastaddr,entry),address); //write pointer to new block
+					ram.Write(TranslateVitrualAddress(address,entry),0); //write null pointer
+					ram.Write(TranslateVitrualAddress(address + 4,entry),size); //write size of new pointer
+					MergeFreeBlocks(entry);
+				} else { //merge
+					uint finalsize = ram.ReadUInt(TranslateVitrualAddress(finaladdr + 4,entry));
+					uint newsize = finalsize + size;
+					ram.Write(TranslateVitrualAddress(finaladdr + 4,entry),newsize); //expand previous block
+					MergeFreeBlocks(entry);
+				}
+			}
+		}
+
+		public void MergeFreeBlocks(PageDirectoryEntry entry) {
+			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry);) {
+				uint nextblock = ram.ReadUInt(TranslateVitrualAddress(addr, entry)); //read address of next free block
+				if(nextblock == 0) {
+					break; //end of list
+				}
+				uint blocksize = ram.ReadUInt(TranslateVitrualAddress(addr + 4, entry)); //read size of current free block
+				if(addr + blocksize >= nextblock) {
+					uint nextsize = ram.ReadUInt(TranslateVitrualAddress(nextblock + 4, entry)); //read size of next block
+					uint newsize = blocksize + nextsize;
+					uint nextpointer = ram.ReadUInt(TranslateVitrualAddress(nextblock, entry));
+					ram.Write(TranslateVitrualAddress(addr,entry),nextpointer);
+					ram.Write(TranslateVitrualAddress(addr + 4,entry),newsize);
+				}
+				addr = nextblock;
 			}
 		}
 	}
 }
-
