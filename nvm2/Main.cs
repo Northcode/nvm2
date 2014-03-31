@@ -86,6 +86,15 @@ namespace nvm2
 				} else if (sargs[0] == "dmpfl") {
 					int pt = Convert.ToInt32(sargs[1]);
 					pager.DumpFreeList(pager.getEntry(pt));
+				} else if (sargs[0] == "pushi") {
+					int pt = Convert.ToInt32(sargs[1]);
+					int val = Convert.ToInt32(sargs[2]);
+					pager.Push(val,pager.getEntry(pt));
+				} else if (sargs[0] == "popi") {
+					int pt = Convert.ToInt32(sargs[1]);
+					Console.WriteLine(pager.PopInt(pager.getEntry(pt)));
+				} else if (sargs[0] == "exit") {
+					break;
 				}
 			}
 		}
