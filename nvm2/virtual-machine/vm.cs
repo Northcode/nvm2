@@ -32,11 +32,16 @@ namespace nvm2
 		public uint IP; // Instruction pointer register
 		public bool CP; // Comparator register
 		public uint SP;	// Stack pointer
-		public uint BP; // Base stack pointer (start of callstack)
+		public uint HP; // Heap pointer
+		public uint BP; // Base stack pointer
 		public uint FP; // Frame pointer
-		public int CR3; // Current page table register
+		public PageDirectoryEntry CR3; // Current page table register
+		public int CR3I; //Current page table index register
 		public int BPG; //Base page table pointer
 		public uint CSP; //Callstack pointer
+		public uint CBP; //Callstack base pointer
+		public bool RN; //Run register (true for running/false for terminated)
+		public bool BRK; //Break register (halt until user presses ENTER)
 
 		// Helper classes
 		internal CallStack callstack;
@@ -62,8 +67,10 @@ namespace nvm2
 
 			//setup premade page for callstack and bios
 			BPG = pager.CreatePageEntry(Pager.PAGE_KERNEL_MODE);
-			CSP = pager.getVAT(1000,pager.getEntry(BPG)); //bios will be loaded at 0 to 1000
-			BP = CSP;
+			CSP = pager.getVAT(1024,pager.getEntry(BPG)); //bios will be loaded at 0 to 1024
+			CBP = CSP;
+			CR3I = BPG;
+			CR3 = pager.getEntry(CR3I);
 		}
 
 		/// <summary>
@@ -85,6 +92,22 @@ namespace nvm2
 				return devices[device];
 			}
 			throw new ArgumentOutOfRangeException("Device does not exist: " + device.ToString());
+		}
+
+		public void LoadProgram (byte[] data)
+		{
+			CR3I = pager.CreatePageEntry(Pager.PAGE_USER_MODE);
+			CR3 = pager.getEntry(CR3I);
+			pager.LoadProgram(data,CR3);
+		}
+
+		public void SwitchPage (int newpage)
+		{
+			CR3I = newpage;
+			CR3 = pager.getEntry(CR3I);
+			SP = CR3.stack_pointer;
+			HP = CR3.heap_pointer;
+			BP = CR3.base_pointer;
 		}
 	}
 }

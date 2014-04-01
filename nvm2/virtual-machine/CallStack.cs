@@ -20,14 +20,14 @@ namespace nvm2
 
 		public void Pop ()
 		{
-			if (machine.CSP - 4 > machine.BP) {
+			if (machine.CSP - 4 > machine.CBP) {
 				machine.CSP -= 4;
 			}
 		}
 
 		public void Push ()
 		{
-			if (machine.CSP + 4 < machine.BP + vm.CALL_STACK_SIZE) {
+			if (machine.CSP + 4 < machine.CBP + vm.CALL_STACK_SIZE) {
 				machine.CSP += 4;
 				ram.Write(machine.CSP,machine.IP);
 			}

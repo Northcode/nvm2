@@ -57,6 +57,10 @@ namespace nvm2
 		public const byte GET_PAGE_ID = 43;
 		public const byte PAGE_VAT = 44;
 		public const byte REVERSE_VAT = 45;
+		//Interupts!
+		public const byte INT = 46; //hardware interupt
+		public const byte SWI = 47; //software interupt
+		public const byte RSWI = 48; //register software interupt (DA)
 	}
 
 	static class Registers
@@ -75,9 +79,61 @@ namespace nvm2
 		public const byte IP = 11;
 	}
 
+	interface HardwareInterupt
+	{
+		void Run(vm machine);
+	}
+
+	class CoreInterupt : HardwareInterupt
+	{
+		//operation modes
+		public const byte TERMINATE = 0;
+		public const byte BREAK = 1;
+		public const byte LOAD_DEVICE = 2;
+		public const byte UNLOAD_DEVICE = 3;
+		public const byte LOAD_PROGRAM = 4;
+
+		public void Run (vm machine)
+		{
+			if (machine.A == TERMINATE) {
+				machine.RN = false;
+			} else if (machine.A == BREAK) {
+				machine.BRK = true;
+			}
+		}
+	}
+
+	class TerminalInterupt : HardwareInterupt
+	{
+		public const byte PRINTCH = 0;
+		public const byte PRINTSTR = 1;
+		public const byte PRINTINT = 2;
+		public const byte PRINTFLT = 3;
+		public const byte READCH = 4;
+		public const byte READSTR = 5;
+		public const byte READINT = 6;
+		public const byte READFLT = 7;
+
+		public void Run (vm machine)
+		{
+			if (machine.A == PRINTCH) {
+				Console.Write ((char)machine.B);
+			} else if (machine.A == PRINTSTR) {
+				string str = machine.pager.PopString (machine.CR3);
+				Console.Write (str);
+			} else if (machine.A == PRINTINT) {
+				Console.Write (machine.AX);
+			} else if (machine.A == PRINTFLT) {
+				Console.Write(machine.EAX);
+			}
+		}
+	}
+
 	class CPU : ComputeDevice
 	{
 		vm machine;
+
+		HardwareInterupt[] hardwareinterupts;
 
 		public CPU (vm Machine)
 		{
@@ -170,44 +226,60 @@ namespace nvm2
 				case OpCodes.CALLR:
 					CallR();
 					break;
+				case OpCodes.MALLOC:
+					Malloc();
+					break;
+				case OpCodes.FREE:
+					Free();
+					break;
+				case OpCodes.INT:
+					Int();
+					break;
+				default:
+					Nop();
+					break;
 			}
 		}
 
+		void Nop ()
+		{
+		}
+
 		byte NextByte() {
-			return machine.ram.Read(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			return machine.ram.Read(machine.pager.getVAT(machine.IP,machine.CR3));
 		}
 		int NextInt() {
-			return machine.ram.ReadInt(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			return machine.ram.ReadInt(machine.pager.getVAT(machine.IP,machine.CR3));
 		}
 		uint NextUInt() {
-			return machine.ram.ReadUInt(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			return machine.ram.ReadUInt(machine.pager.getVAT(machine.IP,machine.CR3));
 		}
 		float NextFloat() {
-			return machine.ram.ReadFloat(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			return machine.ram.ReadFloat(machine.pager.getVAT(machine.IP,machine.CR3));
 		}
 		string NextString() {
-			return machine.ram.ReadString(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			return machine.ram.ReadString(machine.pager.getVAT(machine.IP,machine.CR3));
 		}
 
 		void ExecuteLD() {
-			byte type = machine.ram.Read(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			byte type = NextByte();
 			machine.IP++;
-			byte reg = machine.ram.Read(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			byte reg = NextByte();
 			machine.IP++;
 			if(type == 0) {
-				byte val = machine.ram.Read(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+				byte val = NextByte();
 				machine.IP++;
 				LDREG(reg,val);
 			} else if (type == 1) {
-				int val = machine.ram.ReadInt(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+				int val = NextInt();
 				machine.IP += 4;
 				LDREG(reg,val);
 			} else if (type == 2) {
-				uint val = machine.ram.ReadUInt(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+				uint val = NextUInt();
 				machine.IP += 4;
 				LDREG(reg,val);
 			} else if (type == 3) {
-				float val = machine.ram.ReadFloat(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+				float val = NextFloat();
 				machine.IP += 4;
 				LDREG(reg,val);
 			}
@@ -282,9 +354,9 @@ namespace nvm2
 		#endregion
 
 		void ExecuteMV() {
-			byte regD = machine.ram.Read(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			byte regD = NextByte();
 			machine.IP++;
-			byte regF = machine.ram.Read(machine.pager.getVAT(machine.IP,machine.pager.getEntry(machine.CR3)));
+			byte regF = NextByte();
 			machine.IP++;
 			switch (regF) {
 				case Registers.A:
@@ -331,62 +403,62 @@ namespace nvm2
 		void PushByte() {
 			byte val = NextByte();
 			machine.IP++;
-			machine.pager.Push(val,machine.pager.getEntry(machine.CR3));
+			machine.pager.Push(val,machine.CR3);
 		}
 		void PushInt() {
 			int val = NextInt();
 			machine.IP += 4;
-			machine.pager.Push(val,machine.pager.getEntry(machine.CR3));
+			machine.pager.Push(val,machine.CR3);
 		}
 		void PushUInt() {
 			uint val = NextUInt();
 			machine.IP += 4;
-			machine.pager.Push(val,machine.pager.getEntry(machine.CR3));
+			machine.pager.Push(val,machine.CR3);
 		}
 		void PushFloat() {
 			float val = NextFloat();
 			machine.IP += 4;
-			machine.pager.Push(val,machine.pager.getEntry(machine.CR3));
+			machine.pager.Push(val,machine.CR3);
 		}
 		void PushReg() {
 			byte reg = NextByte();
 			machine.IP++;
 			switch (reg) {
 				case Registers.A:
-					machine.pager.Push(machine.A,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.A,machine.CR3);
 					break;
 				case Registers.B:
-					machine.pager.Push(machine.B,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.B,machine.CR3);
 					break;
 				case Registers.E:
-					machine.pager.Push(machine.E,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.E,machine.CR3);
 					break;
 				case Registers.DA:
-					machine.pager.Push(machine.DA,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.DA,machine.CR3);
 					break;
 				case Registers.DB:
-					machine.pager.Push(machine.DB,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.DB,machine.CR3);
 					break;
 				case Registers.AX:
-					machine.pager.Push(machine.AX,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.AX,machine.CR3);
 					break;
 				case Registers.BX:
-					machine.pager.Push(machine.BX,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.BX,machine.CR3);
 					break;
 				case Registers.EX:
-					machine.pager.Push(machine.EX,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.EX,machine.CR3);
 					break;
 				case Registers.EAX:
-					machine.pager.Push(machine.EAX,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.EAX,machine.CR3);
 					break;
 				case Registers.EBX:
-					machine.pager.Push(machine.EBX,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.EBX,machine.CR3);
 					break;
 				case Registers.EEX:
-					machine.pager.Push(machine.EEX,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.EEX,machine.CR3);
 					break;
 				case Registers.IP:
-					machine.pager.Push(machine.IP,machine.pager.getEntry(machine.CR3));
+					machine.pager.Push(machine.IP,machine.CR3);
 					break;
 				default:
 					throw new Exception("Invalid register!");
@@ -394,80 +466,80 @@ namespace nvm2
 		}
 		void LoadString() {
 			uint addr = machine.DA;
-			string val = machine.ram.ReadString(machine.pager.getVAT(addr,machine.pager.getEntry(machine.CR3)));
-			machine.pager.Push(val,machine.pager.getEntry(machine.CR3));
+			string val = machine.ram.ReadString(machine.pager.getVAT(addr,machine.CR3));
+			machine.pager.Push(val,machine.CR3);
 		}
 		void PopByte() {
 			byte reg = NextByte();
 			machine.IP++;
-			byte val = machine.pager.PopByte(machine.pager.getEntry(machine.CR3));
+			byte val = machine.pager.PopByte(machine.CR3);
 			LDREG(reg,val);
 		}
 		void PopInt() {
 			byte reg = NextByte();
 			machine.IP++;
-			int val = machine.pager.PopInt(machine.pager.getEntry(machine.CR3));
+			int val = machine.pager.PopInt(machine.CR3);
 			LDREG(reg,val);
 		}
 		void PopUInt() {
 			byte reg = NextByte();
 			machine.IP++;
-			uint val = machine.pager.PopUInt(machine.pager.getEntry(machine.CR3));
+			uint val = machine.pager.PopUInt(machine.CR3);
 			LDREG(reg,val);
 		}
 		void PopFloat() {
 			byte reg = NextByte();
 			machine.IP++;
-			float val = machine.pager.PopFloat(machine.pager.getEntry(machine.CR3));
+			float val = machine.pager.PopFloat(machine.CR3);
 			LDREG(reg,val);
 		}
 		void PopString() {
 			uint addr = machine.DA;
-			string val = machine.pager.PopString(machine.pager.getEntry(machine.CR3));
-			if(machine.pager.checkVAT(addr,(uint)val.Length + 1,machine.pager.getEntry(machine.CR3))) {
-				machine.ram.Write(machine.pager.getVAT(addr,machine.pager.getEntry(machine.CR3)),val);
+			string val = machine.pager.PopString(machine.CR3);
+			if(machine.pager.checkVAT(addr,(uint)val.Length + 1,machine.CR3)) {
+				machine.ram.Write(machine.pager.getVAT(addr,machine.CR3),val);
 			} else {
-				machine.pager.Write(addr,val,machine.pager.getEntry(machine.CR3));
+				machine.pager.Write(addr,val,machine.CR3);
 			}
 		}
 
 		void ReadB() {
-			byte val = machine.ram.Read(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)));
+			byte val = machine.ram.Read(machine.pager.getVAT(machine.DA,machine.CR3));
 			machine.E = val;
 		}
 		void ReadI() {
-			int val = machine.ram.ReadInt(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)));
+			int val = machine.ram.ReadInt(machine.pager.getVAT(machine.DA,machine.CR3));
 			machine.EX = val;
 		}
 		void ReadUI() {
-			uint val = machine.ram.ReadUInt(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)));
+			uint val = machine.ram.ReadUInt(machine.pager.getVAT(machine.DA,machine.CR3));
 			machine.DA = val;
 		}
 		void ReadF() {
-			float val = machine.ram.ReadFloat(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)));
+			float val = machine.ram.ReadFloat(machine.pager.getVAT(machine.DA,machine.CR3));
 			machine.EEX = val;
 		}
 		void WriteB() {
-			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)),machine.A);
+			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.A);
 		}
 		void WriteI() {
-			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)),machine.AX);
+			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.AX);
 		}
 		void WriteUI() {
-			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)),machine.DA);
+			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.DA);
 		}
 		void WriteF() {
-			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.pager.getEntry(machine.CR3)),machine.EAX);
+			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.EAX);
 		}
 
 		void Jmp() {
 			uint addr = NextUInt();
-			machine.IP = machine.pager.getVAT(addr,machine.pager.getEntry(machine.CR3));
+			machine.IP = machine.pager.getVAT(addr,machine.CR3);
 		}
 		void Call() {
 			uint addr = NextUInt();
 			machine.callstack.Push();
-			machine.IP = machine.pager.getVAT(addr,machine.pager.getEntry(machine.CR3));
+			machine.IP = machine.pager.getVAT(addr,machine.CR3);
 		}
 		void Ret() {
 			uint addr = machine.callstack.ReadReturnAddress();
@@ -476,12 +548,25 @@ namespace nvm2
 		}
 		void JmpR() {
 			uint addr = machine.DA;
-			machine.IP = machine.pager.getVAT(addr,machine.pager.getEntry(machine.CR3));
+			machine.IP = machine.pager.getVAT(addr,machine.CR3);
 		}
 		void CallR() {
 			uint addr = machine.DA;
 			machine.callstack.Push();
-			machine.IP = machine.pager.getVAT(addr,machine.pager.getEntry(machine.CR3));
+			machine.IP = machine.pager.getVAT(addr,machine.CR3);
+		}
+
+		void Malloc () {
+			int size = machine.AX;
+			machine.DA = machine.pager.Malloc((uint)size, machine.CR3);
+		}
+		void Free () {
+			uint addr = machine.DA;
+			int size = machine.AX;
+			machine.pager.free(addr,(uint)size, machine.CR3);
+		}
+
+		void Int () {
 		}
 	}
 

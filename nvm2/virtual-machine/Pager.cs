@@ -285,6 +285,33 @@ namespace nvm2
 			return new String(chr);
         }
 
+		public void LoadProgram (byte[] data, PageDirectoryEntry entry)
+		{
+			uint origin = getVAT (0u, entry);
+			if (checkVAT (0u, (uint)data.Length, entry)) { //does the program fit in the first page?
+				for (int i = 0; i < data.Length; i++) {
+					ram.Write ((uint)(origin + i), data[i]); //this should be safe
+				}
+			} else { //oooh boy
+
+				//get length of program
+				uint length = (uint)data.Length;
+				uint writtenbytes = 0;
+				//loop through pages
+				for (int i = 0; i < GetPageDirectoryEntrySize(entry); i++) {
+					//get page start
+					uint origio = getVAT(writtenbytes,entry);
+					//get length of current page
+					uint curlen = (uint)(i == 0 ? Frame.FRAME_SIZE - PAGE_TABLE_SIZE : Frame.FRAME_SIZE);
+					//write through each page
+					for (int j = 0; j < curlen; j++) {
+						ram.Write((uint)(origio + j), data[writtenbytes]);
+						writtenbytes++;
+					}
+				}
+			}
+		}
+
 		#endregion
 
 		// ---- MEMORY ALLOC STUFF ---- all memory allocation is done with relative addresses
