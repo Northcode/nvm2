@@ -12,10 +12,10 @@ namespace nvm2
 		public static void Main (string[] args)
 		{
 			byte[] bios = new byte[] {
-				OpCodes.LD, BaseTypes.BYTE, Registers.B, (byte)'A', //Load 'A' into register B
-				OpCodes.LD, BaseTypes.BYTE, Registers.A, 0, //Load 0 into register A
-				OpCodes.INT, 1, //Print char
-				OpCodes.INT, 0 //Terminate program
+				OpCodes.LD, BaseTypes.BYTE, Registers.B, (byte)'A', 	//Load 'A' into register B
+				OpCodes.LD, BaseTypes.BYTE, Registers.A, 0, 			//Load 0 into register A
+				OpCodes.INT, 1, 										//Print char
+				OpCodes.INT, 0 											//Terminate program
 			};
 
 			vm machine = new vm();

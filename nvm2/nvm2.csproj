@@ -49,6 +49,7 @@
     <Compile Include="virtual-machine\devices\Memory.cs" />
     <Compile Include="virtual-machine\devices\StorageDevice.cs" />
     <Compile Include="virtual-machine\devices\VirtualDataDisk.cs" />
+    <Compile Include="Assembler\Assembler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop">
@@ -60,6 +61,7 @@
     <Folder Include="virtual-machine\" />
     <Folder Include="test-code\" />
     <Folder Include="docs\" />
+    <Folder Include="Assembler\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test-code\hello world.nsm" />
