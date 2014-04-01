@@ -16,14 +16,13 @@ namespace nvm2
 		public const byte BOOL_LIT = 7;
 
 		public object value;
-		public byte tokentype;
+		public byte type;
 	}
-
 
 	public class Assembler
 	{
 		string code;
-		List<Token> tokens = new Token();
+		List<Token> tokens = new List<Token>();
 
 		public Assembler (string Code)
 		{
@@ -56,7 +55,7 @@ namespace nvm2
                         }
                         i--;
                         float f = (float)Convert.ToDecimal(strb.ToString());
-                        tokens.Add(new Token() { type = Token.FLOAT_LIT, val = f });
+                        tokens.Add(new Token() { type = Token.FLOAT_LIT, value = f });
                     }
                     else if (code[i + 1] == 'x')
                     {
@@ -66,13 +65,13 @@ namespace nvm2
                         i++;
                         strb.Append(code[i]);
                         byte b = byte.Parse(strb.ToString(), System.Globalization.NumberStyles.HexNumber);
-                        tokens.Add(new Token() { type = Token.BYTE_LIT, val = b });
+                        tokens.Add(new Token() { type = Token.BYTE_LIT, value = b });
                     }
                     else
                     {
                         string str = strb.ToString();
                         int n = Convert.ToInt32(str);
-                        tokens.Add(new Token() { type = Token.INT_LIT, val = n });
+                        tokens.Add(new Token() { type = Token.INT_LIT, value = n });
                     }
                 }
                 else if (char.IsLetter(code[i]) || code[i] == '_')
@@ -85,15 +84,15 @@ namespace nvm2
                     }
                     if (strb.ToString() == "true")
                     {
-                        tokens.Add(new Token() { type = Token.BOOL_LIT, val = true });
+                        tokens.Add(new Token() { type = Token.BOOL_LIT, value = true });
                     }
                     else if (strb.ToString() == "false")
                     {
-                        tokens.Add(new Token() { type = Token.BYTE_LIT, val = false });
+                        tokens.Add(new Token() { type = Token.BYTE_LIT, value = false });
                     }
                     else
                     {
-                        tokens.Add(new Token() { type = Token.WORD, val = strb.ToString() });
+                        tokens.Add(new Token() { type = Token.WORD, value = strb.ToString() });
                     }
                     i--;
                 }
@@ -125,7 +124,7 @@ namespace nvm2
                             r = (code[i] != '"');
                         }
                     }
-                    tokens.Add(new Token() { type = Token.STRING_LIT, val = strb.ToString() });
+                    tokens.Add(new Token() { type = Token.STRING_LIT, value = strb.ToString() });
                 }
                 else if (code[i] == '\n')
                 {
@@ -145,7 +144,7 @@ namespace nvm2
                 }
                 else
                 {
-                    tokens.Add(new Token() { type = Token.SYMBOL, val = code[i] });
+                    tokens.Add(new Token() { type = Token.SYMBOL, value = code[i] });
                 }
                 i++;
             }
