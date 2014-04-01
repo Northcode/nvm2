@@ -79,6 +79,15 @@ namespace nvm2
 		public const byte IP = 11;
 	}
 
+	static class BaseTypes
+	{
+		public const byte BYTE = 0;
+		public const byte INT = 1;
+		public const byte UINT = 2;
+		public const byte FLOAT = 3;
+		public const byte STRING = 4;
+	}
+
 	interface HardwareInterupt
 	{
 		void Run(vm machine);
@@ -99,6 +108,13 @@ namespace nvm2
 				machine.RN = false;
 			} else if (machine.A == BREAK) {
 				machine.BRK = true;
+			} else if (machine.A == UNLOAD_DEVICE) {
+				int device = machine.AX;
+				machine.UnloadDevice(device);
+			} else if (machine.A == LOAD_PROGRAM) {
+				int device = machine.AX;
+				StorageDevice disk = (StorageDevice)machine.GetDevice(device);
+				machine.LoadProgram(disk.GetData());
 			}
 		}
 	}
@@ -124,7 +140,16 @@ namespace nvm2
 			} else if (machine.A == PRINTINT) {
 				Console.Write (machine.AX);
 			} else if (machine.A == PRINTFLT) {
-				Console.Write(machine.EAX);
+				Console.Write (machine.EAX);
+			} else if (machine.A == READCH) {
+				machine.E = (byte)Console.Read ();
+			} else if (machine.A == READSTR) {
+				string str = Console.ReadLine ();
+				machine.pager.Push (str, machine.CR3);
+			} else if (machine.A == READINT) {
+				machine.AX = Convert.ToInt32 (Console.ReadLine ());
+			} else if (machine.A == READFLT) {
+				machine.EAX = (float)Convert.ToInt32(Console.ReadLine());
 			}
 		}
 	}
@@ -138,11 +163,20 @@ namespace nvm2
 		public CPU (vm Machine)
 		{
 			this.machine = Machine;
+
+			hardwareinterupts = new HardwareInterupt[] {
+				new CoreInterupt(),
+				new TerminalInterupt()
+			};
 		}
 
 		public void Run()
 		{
-
+			while (machine.RN) {
+				byte opcode = NextByte();
+				machine.IP++;
+				ExecuteOpcode(opcode);
+			}
 		}
 
 		public void ExecuteOpcode(byte opcode)
@@ -266,19 +300,19 @@ namespace nvm2
 			machine.IP++;
 			byte reg = NextByte();
 			machine.IP++;
-			if(type == 0) {
+			if(type == BaseTypes.BYTE) {
 				byte val = NextByte();
 				machine.IP++;
 				LDREG(reg,val);
-			} else if (type == 1) {
+			} else if (type == BaseTypes.INT) {
 				int val = NextInt();
 				machine.IP += 4;
 				LDREG(reg,val);
-			} else if (type == 2) {
+			} else if (type == BaseTypes.UINT) {
 				uint val = NextUInt();
 				machine.IP += 4;
 				LDREG(reg,val);
-			} else if (type == 3) {
+			} else if (type == BaseTypes.FLOAT) {
 				float val = NextFloat();
 				machine.IP += 4;
 				LDREG(reg,val);
@@ -567,6 +601,9 @@ namespace nvm2
 		}
 
 		void Int () {
+			byte interupt = NextByte();
+			machine.IP++;
+			hardwareinterupts[interupt].Run(machine);
 		}
 	}
 

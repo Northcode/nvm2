@@ -67,10 +67,17 @@ namespace nvm2
 
 			//setup premade page for callstack and bios
 			BPG = pager.CreatePageEntry(Pager.PAGE_KERNEL_MODE);
-			CSP = pager.getVAT(1024,pager.getEntry(BPG)); //bios will be loaded at 0 to 1024
+			CSP = pager.getVAT(1024,pager.getEntry(BPG)); //bios will be loaded at 0 to 1023
 			CBP = CSP;
 			CR3I = BPG;
 			CR3 = pager.getEntry(CR3I);
+		}
+
+		public void Start ()
+		{
+			RN = true;
+			IP = 0u;
+			cpu.Run();
 		}
 
 		/// <summary>
@@ -87,6 +94,11 @@ namespace nvm2
 			devices = ndevices;
 		}
 
+		public void UnloadDevice (int device)
+		{
+			devices[device] = null;
+		}
+
 		public VMDevice GetDevice(int device) {
 			if (device > 0 && device < devices.Length) {
 				return devices[device];
@@ -96,9 +108,20 @@ namespace nvm2
 
 		public void LoadProgram (byte[] data)
 		{
-			CR3I = pager.CreatePageEntry(Pager.PAGE_USER_MODE);
-			CR3 = pager.getEntry(CR3I);
-			pager.LoadProgram(data,CR3);
+			EX = pager.CreatePageEntry(Pager.PAGE_USER_MODE);
+			PageDirectoryEntry entry = pager.getEntry(CR3I);
+			pager.LoadProgram(data,entry);
+		}
+
+		public void LoadBios (byte[] data)
+		{
+			if (data.Length > 1023) {
+				throw new ArgumentException("Bios to large, max size is 1023");
+			}
+			uint origin = pager.getVAT(0u,pager.getEntry(BPG));
+			for (uint i = 0; i < data.Length && i < 1023; i++) {
+				ram.Write(origin + i, data[i]);
+			}
 		}
 
 		public void SwitchPage (int newpage)
