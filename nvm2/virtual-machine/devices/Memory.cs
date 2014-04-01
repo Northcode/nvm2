@@ -67,7 +67,7 @@ namespace nvm2
 		public float ReadFloat () { float f = ReadFloat (m_pointer); m_pointer += 4; return f; }
 		public string ReadString () { string s = ReadString (m_pointer); m_pointer += (uint)s.Length; return s; }
 
-		 //Write methods
+		//Write methods
         public void Write(uint address, byte value)
         {
             data[address] = value;

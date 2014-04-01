@@ -110,9 +110,27 @@ namespace nvm2
 			return count * Frame.FRAME_SIZE;
 		}
 
+		///<summary>
+		///Translates the page relative address to a 'physical' one
+		///</summary>
 		public uint getVAT(uint address, PageDirectoryEntry entry) {
 			// Get address
 			uint ptaddr = entry.PTAddress;
+
+			//The 4 and 5 is for keeping space for integers stored to keep stuff from overflowing to different pages, strings need their own logic to do this.
+			if(address < Frame.FRAME_SIZE - PAGE_TABLE_SIZE - 4) { //address is in the first frame
+				return ptaddr + PAGE_TABLE_SIZE + address;
+			} else { //address is after first frame
+				int page = (int)(address / Frame.FRAME_SIZE);
+				int offset = (int)(address - page * Frame.FRAME_SIZE + PAGE_TABLE_SIZE);
+				if(offset > Frame.FRAME_SIZE - 5) { //fix for addresses over framesize - 512
+					page++;
+					offset -= Frame.FRAME_SIZE;
+				}
+				uint pageaddr = ram.ReadUInt((uint)(ptaddr + (page * 4)));
+				return (uint)(pageaddr + offset);
+			}
+			/*
 			// Get Page id
 			int page = (int)(address / Frame.FRAME_SIZE);
 			int offset = (int)(address - page * Frame.FRAME_SIZE);
@@ -122,9 +140,20 @@ namespace nvm2
 
 			// Get address
 			return (uint)(pageaddr + offset);
+			*/
 		}
 
-
+		///<summary>
+		///Check if the address will overflow to the next page with the given size
+		///</summary>
+		///<returns>
+		///False if the address overflows
+		///</returns>
+		public bool checkVAT(uint address, uint size, PageDirectoryEntry entry) {
+			uint addr1 = getVAT(address,entry);
+			uint addr2 = getVAT(address + size,entry);
+			return (addr2 - addr1 == size);
+		}
 
 		public void AddPage (PageDirectoryEntry entry)
 		{
@@ -149,6 +178,90 @@ namespace nvm2
 				}
 			}
 		}
+
+		#endregion
+
+		#region custom_ram
+		// ------- CUSTOM OVERLOADS FOR RAM METHODS USING VAT (WARNING SLOW!)-------
+
+		//Write methods
+        public void Write(uint address, byte value, PageDirectoryEntry entry)
+        {
+            ram.Write(getVAT(address,entry),value);
+        }
+
+        public void Write(uint address, int value, PageDirectoryEntry entry)
+        {
+            byte[] convertedValues = BitConverter.GetBytes(value);
+            ram.Write(getVAT(address + 0,entry),convertedValues[0]);
+            ram.Write(getVAT(address + 1,entry),convertedValues[1]);
+            ram.Write(getVAT(address + 2,entry),convertedValues[2]);
+            ram.Write(getVAT(address + 3,entry),convertedValues[3]);
+        }
+
+        public void Write(uint address, uint value, PageDirectoryEntry entry)
+        {
+            byte[] convertedValues = BitConverter.GetBytes(value);
+            ram.Write(getVAT(address + 0,entry),convertedValues[0]);
+            ram.Write(getVAT(address + 1,entry),convertedValues[1]);
+            ram.Write(getVAT(address + 2,entry),convertedValues[2]);
+            ram.Write(getVAT(address + 3,entry),convertedValues[3]);
+        }
+
+        public void Write(uint address, float value, PageDirectoryEntry entry)
+        {
+            byte[] convertedValues = BitConverter.GetBytes(value);
+            ram.Write(getVAT(address + 0,entry),convertedValues[0]);
+            ram.Write(getVAT(address + 1,entry),convertedValues[1]);
+            ram.Write(getVAT(address + 2,entry),convertedValues[2]);
+            ram.Write(getVAT(address + 3,entry),convertedValues[3]);
+        }
+
+        public void Write(uint address, string value, PageDirectoryEntry entry)
+        {
+            Write((uint)(address), (uint)value.Length, entry);
+			address += 4;
+            for (int i = 0; i < value.Length; i++)
+            {
+                Write((uint)(address + i), ((byte)value[i]), entry);
+            }
+        }
+
+        public byte Read(uint address, PageDirectoryEntry entry)
+        {
+            return ram.Read(getVAT(address,entry));
+        }
+
+        internal ushort ReadUInt16(uint address, PageDirectoryEntry entry)
+        {
+            return ram.ReadUInt16(getVAT(address,entry));
+        }
+
+        public int ReadInt(uint address, PageDirectoryEntry entry)
+        {
+            return ram.ReadInt(getVAT(address,entry));
+        }
+
+        public uint ReadUInt(uint address, PageDirectoryEntry entry)
+        {
+            return ram.ReadUInt(getVAT(address,entry));
+        }
+
+        public float ReadFloat(uint address, PageDirectoryEntry entry)
+        {
+            return ram.ReadFloat(getVAT(address,entry));
+        }
+
+        public string ReadString(uint address, PageDirectoryEntry entry)
+        {
+			int len = ReadInt(address, entry);
+			address += 4;
+			char[] chr = new char[len];
+			for (int i = 0; i < len; i++) {
+				chr[i] = (char)Read ((uint)(address + i), entry);
+			}
+			return new String(chr);
+        }
 
 		#endregion
 
@@ -243,7 +356,7 @@ namespace nvm2
 		{
 			Console.WriteLine("freeing memory at address: " + address + " with size: " + size);
 			uint lastaddr = entry.free_pointer;
-			bool isfirst = true;
+			//bool isfirst = true;
 			//check if block we are freeing is before the first in the freelist
 			if (address < lastaddr) {
 				Console.WriteLine("Address is less than " + lastaddr);
@@ -364,7 +477,11 @@ namespace nvm2
 				throw new Exception("No more space in stack!");
 			}
 			entry.stack_pointer -= (uint)(data.Length + 4);
-			ram.Write(getVAT(entry.stack_pointer,entry),data);
+			if(checkVAT(entry.stack_pointer,(uint)(data.Length + 4),entry)) { //check for overflow to next page
+				ram.Write(getVAT(entry.stack_pointer,entry),data);
+			} else {
+				Write(entry.stack_pointer,data,entry); //use paging method to write, slower
+			}
 		}
 
 		public byte PopByte(PageDirectoryEntry entry) {
@@ -404,7 +521,12 @@ namespace nvm2
 			if (entry.stack_pointer + size + 4 >= entry.heap_pointer) {
 				throw new Exception("No more items in stack!");
 			}
-			string val = ram.ReadString(getVAT(entry.stack_pointer,entry));
+			string val = "";
+			if(checkVAT(entry.stack_pointer,size,entry)) { //check for page overflow
+				val = ram.ReadString(getVAT(entry.stack_pointer,entry)); 
+			} else {
+				val = ReadString(entry.stack_pointer,entry); //use method for safe writing under page overflow
+			}
 			entry.stack_pointer	+= size + 4;
 			return val;
 		}
