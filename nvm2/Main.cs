@@ -131,6 +131,9 @@ namespace nvm2
 					} else if(sargs[0] == "vat") {
 						uint val = Convert.ToUInt32(sargs[1]);
 						Console.WriteLine(pager.getVAT(val,pager.getEntry(selected)));
+					} else if(sargs[0] == "rvat") {
+						uint val = Convert.ToUInt32(sargs[1]);
+						Console.WriteLine(pager.reverseVAT(val));
 					} else if (sargs[0] == "writeb") {
 						uint addr = Convert.ToUInt32(sargs[1]);
 						byte val = Convert.ToByte(sargs[2]);

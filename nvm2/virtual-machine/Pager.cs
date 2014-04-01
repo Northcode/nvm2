@@ -59,6 +59,7 @@ namespace nvm2
 			//Find a free ram frame for the first page
 			Frame mainFrame = ram.findFreeFrame();
 			mainFrame.IsFree = false;
+			mainFrame.PageTable = index;
 			entry.PTAddress = mainFrame.Address;
 			entry.AccessLevel = mode;
 			entry.InUse = true;
@@ -155,13 +156,34 @@ namespace nvm2
 			return (addr2 - addr1 == size);
 		}
 
+		public int reverseVAT(uint address) {
+			int frame = (int)address / Frame.FRAME_SIZE;
+			return ram.getFrame(frame).PageTable;
+		}
+
+		public uint[] ReadPageTable(PageDirectoryEntry entry) {
+			uint[] array = new uint[PAGE_TABLE_SIZE / 4];
+			for (int i = 0; i < PAGE_TABLE_SIZE / 4; i++) {
+				uint addr = ram.ReadUInt((uint)(entry.PTAddress + i * 4));
+				array[i] = addr;
+			}
+			return array;
+		}
+
 		public void AddPage (PageDirectoryEntry entry)
 		{
 			//Find free frame
 			Frame freeFrame = ram.findFreeFrame();
 			freeFrame.IsFree = false;
+			for(int i = 0; i < PageDirectory.Length; i++) {
+				if(PageDirectory[i].PTAddress == entry.PTAddress) {
+					freeFrame.PageTable = i;
+					Console.WriteLine(i);
+					break;
+				}
+			}
 			//Add frame to PT
-			for (int i = 0; i < Pager.PAGE_TABLE_SIZE; i++) {
+			for (int i = 0; i < Pager.PAGE_TABLE_SIZE / 4; i++) {
 				if (ram.ReadUInt((uint)(entry.PTAddress + i * 4)) == 0) {
 					ram.Write((uint)(entry.PTAddress + i * 4),freeFrame.Address);
 					break;
@@ -171,7 +193,7 @@ namespace nvm2
 
 		public void DumpPageTable (PageDirectoryEntry entry)
 		{
-			for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
+			for (int i = 0; i < PAGE_TABLE_SIZE / 4; i++) {
 				uint addr = ram.ReadUInt((uint)(entry.PTAddress + i * 4));
 				if (addr != 0) {
 					Console.WriteLine(addr);

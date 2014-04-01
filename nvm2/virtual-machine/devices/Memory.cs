@@ -18,6 +18,7 @@ namespace nvm2
 
 		public uint Address {get;set;}
 		public bool IsFree { get; set; }
+		public int PageTable {get;set;}
 	}
 
 	public class Memory : StorageDevice

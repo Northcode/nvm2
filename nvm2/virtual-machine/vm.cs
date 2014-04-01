@@ -4,15 +4,16 @@ namespace nvm2
 {
 	public class vm
 	{
-		public const int CALL_STACK_SIZE = 512; // Size of callstack in bytes;
+		public const int CALL_STACK_SIZE = 2048; // Size of callstack in bytes;
+		public const int PAGE_DIRECTORY_SIZE = 16; //Number of allowed page tables;
 
 		VMDevice[] devices;
 
 		//Device shortcuts
-		CPU cpu;
-		Memory ram;
-		HDI hdi;
-		VirtualDataDisk disk0;
+		internal CPU cpu;
+		internal Memory ram;
+		internal HDI hdi;
+		internal VirtualDataDisk disk0;
 		
 		//Registers
 		public byte A; // "action" register, used in interupts
@@ -33,16 +34,19 @@ namespace nvm2
 		public uint SP;	// Stack pointer
 		public uint BP; // Base stack pointer (start of callstack)
 		public uint FP; // Frame pointer
-		public uint CR3; // Current page register
+		public int CR3; // Current page table register
+		public int BPG; //Base page table pointer
+		public uint CSP; //Callstack pointer
 
 		// Helper classes
-		CallStack callstack;
+		internal CallStack callstack;
+		internal Pager pager;
 
 		public vm ()
 		{
 			//Initialize devices;
 			cpu = new CPU(this); // Initializes the cpu
-			ram = new Memory(4 * 4 * 1024); // Allocates 16kB of RAM
+			ram = new Memory(PAGE_DIRECTORY_SIZE * Frame.FRAME_SIZE); //Allocates enough ram to fit number of page tables allowed
 			hdi = new HDI("disk0"); //Maps a folder to the hard disk interface
 			disk0 = new VirtualDataDisk(); // Virtual data disk
 
@@ -54,6 +58,12 @@ namespace nvm2
 			};
 
 			callstack = new CallStack(this,ram);
+			pager = new Pager(ram, PAGE_DIRECTORY_SIZE);
+
+			//setup premade page for callstack and bios
+			BPG = pager.CreatePageEntry(Pager.PAGE_KERNEL_MODE);
+			CSP = pager.getVAT(1000,pager.getEntry(BPG)); //bios will be loaded at 0 to 1000
+			BP = CSP;
 		}
 
 		/// <summary>

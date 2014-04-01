@@ -15,21 +15,21 @@ namespace nvm2
 
 		public uint ReadReturnAddress ()
 		{
-			return ram.ReadUInt(machine.SP);
+			return ram.ReadUInt(machine.CSP);
 		}
 
 		public void Pop ()
 		{
-			if (machine.SP - 4 > machine.BP) {
-				machine.SP -= 4;
+			if (machine.CSP - 4 > machine.BP) {
+				machine.CSP -= 4;
 			}
 		}
 
-		public void Push (uint addr)
+		public void Push ()
 		{
-			if (machine.SP + 4 < machine.BP + vm.CALL_STACK_SIZE) {
-				machine.SP += 4;
-				ram.Write(addr,machine.SP);
+			if (machine.CSP + 4 < machine.BP + vm.CALL_STACK_SIZE) {
+				machine.CSP += 4;
+				ram.Write(machine.CSP,machine.IP);
 			}
 		}
 	}
