@@ -1,5 +1,7 @@
 using System;
 using System.Text;
+using System.IO;
+using System.Collections.Generic;
 
 namespace nvm2
 {
@@ -27,13 +29,31 @@ namespace nvm2
 			};
 			*/
 
-			StringBuilder stb = new StringBuilder();
-			string c = "";
-			while((c = Console.ReadLine()) != "q") {
-				stb.AppendLine(c);
+			List<VMDevice> extradevices = new List<VMDevice>();
+
+			string bioscode = "";
+
+			for(int i = 0; i < args.Length; i++) {
+				if(args[i] == "-rd") {
+					i++;
+					extradevices.Add(new VirtualROMDisk(args[i]));
+				}
+				else if(args[i] == "-b") {
+					i++;
+					bioscode = File.ReadAllText(args[i]);
+				}
 			}
 
-			Assembler asm = new Assembler(stb.ToString());
+			if(bioscode == "") {
+				StringBuilder stb = new StringBuilder();
+				string c = "";
+				while((c = Console.ReadLine()) != "q") {
+					stb.AppendLine(c);
+				}
+				bioscode = stb.ToString();
+			}
+
+			Assembler asm = new Assembler(bioscode);
 			asm.Scan();
 			asm.Assemble();
 

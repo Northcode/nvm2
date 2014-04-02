@@ -106,6 +106,10 @@ namespace nvm2
 			throw new ArgumentOutOfRangeException("Device does not exist: " + device.ToString());
 		}
 
+		public int NumberOfDevices() {
+			return devices.Length;
+		}
+
 		public void LoadProgram (byte[] data)
 		{
 			EX = pager.CreatePageEntry(Pager.PAGE_USER_MODE);

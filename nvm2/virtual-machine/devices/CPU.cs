@@ -102,6 +102,7 @@ namespace nvm2
 		public const byte LOAD_DEVICE = 2;
 		public const byte UNLOAD_DEVICE = 3;
 		public const byte LOAD_PROGRAM = 4;
+		public const byte GET_ROM_DEVICE = 5;
 
 		public void Run (vm machine)
 		{
@@ -116,6 +117,16 @@ namespace nvm2
 				int device = machine.AX;
 				StorageDevice disk = (StorageDevice)machine.GetDevice(device);
 				machine.LoadProgram(disk.GetData());
+			} else if (machine.A == GET_ROM_DEVICE) {
+				for (int i = 0; i < machine.NumberOfDevices(); i++) {
+					if(machine.GetDevice(i) is VirtualROMDisk) {
+						machine.EX = i;
+						if(machine.AX <= 0) {
+							break;
+						}
+						machine.AX--;
+					}
+				}
 			}
 		}
 	}
