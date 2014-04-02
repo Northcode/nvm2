@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace nvm2
 {
@@ -11,12 +12,37 @@ namespace nvm2
 
 		public static void Main (string[] args)
 		{
-			byte[] bios = new byte[] {
+			/*byte[] bios = new byte[] {
 				OpCodes.LD, BaseTypes.BYTE, Registers.B, (byte)'A', 	//Load 'A' into register B
 				OpCodes.LD, BaseTypes.BYTE, Registers.A, 0, 			//Load 0 into register A
 				OpCodes.INT, 1, 										//Print char
+				OpCodes.LD, BaseTypes.BYTE, Registers.B, (byte)'B',
+				OpCodes.INT, 1,
+				OpCodes.LD, BaseTypes.BYTE, Registers.B, (byte)'C',
+				OpCodes.INT, 1,
+				OpCodes.LD, BaseTypes.BYTE, Registers.B, (byte)'D',
+				OpCodes.INT, 1,
+				
 				OpCodes.INT, 0 											//Terminate program
 			};
+			*/
+
+			StringBuilder stb = new StringBuilder();
+			string c = "";
+			while((c = Console.ReadLine()) != "q") {
+				stb.AppendLine(c);
+			}
+
+			Assembler asm = new Assembler(stb.ToString());
+			asm.Scan();
+			asm.Assemble();
+
+			byte[] bios = asm.GetProgram();
+			/*
+			for(int i = 0; i < bios.Length; i++) {
+				Console.WriteLine(i + ": " + bios[i]);
+			}
+			*/
 
 			vm machine = new vm();
 			machine.LoadBios(bios);

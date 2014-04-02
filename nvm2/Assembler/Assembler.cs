@@ -14,6 +14,7 @@ namespace nvm2
 		public const byte STRING_LIT = 5;
 		public const byte SYMBOL = 6;
 		public const byte BOOL_LIT = 7;
+        public const byte CHAR_LIT = 8;
 
 		public object value;
 		public byte type;
@@ -23,11 +24,20 @@ namespace nvm2
 	{
 		string code;
 		List<Token> tokens = new List<Token>();
+        List<byte> program = new List<byte>();
+        int i = 0;
+
+        Dictionary<string,uint> symbolTable = new Dictionary<string,uint>();
+        List<Tuple<int,string>> callTable = new List<Tuple<int,string>>();
 
 		public Assembler (string Code)
 		{
 			code = Code;
 		}
+
+        public byte[] GetProgram() {
+            return program.ToArray();
+        }
 
 		public void Scan()
         {
@@ -125,6 +135,11 @@ namespace nvm2
                         }
                     }
                     tokens.Add(new Token() { type = Token.STRING_LIT, value = strb.ToString() });
+                } else if (code[i] == '\'') {
+                    i++;
+                    char c = code[i];
+                    i++; i++;
+                    tokens.Add(new Token() {type = Token.CHAR_LIT, value = c});
                 }
                 else if (code[i] == '\n')
                 {
@@ -150,11 +165,216 @@ namespace nvm2
             }
         }
 
+        byte register_to_byte(string register) {
+            switch (register) {
+                case "A": return Registers.A;
+                case "B": return Registers.B;
+                case "E": return Registers.E;
+                case "DA": return Registers.DA;
+                case "DB": return Registers.DB;
+                case "AX": return Registers.AX;
+                case "BX": return Registers.BX;
+                case "EX": return Registers.EX;
+                case "EAX": return Registers.EAX;
+                case "EBX": return Registers.EBX;
+                case "EEX": return Registers.EEX;
+                case "IP": return Registers.IP;
+                default: return 255;
+            }
+        }
+
 		public void Assemble() {
-			foreach (Token token in tokens) {
-				
-			}
+            for(i = 0; i < tokens.Count; i++) {
+                if (tokens[i].type == Token.WORD) {
+                    string word = tokens[i].value as string;
+                    if (word == "LD") {
+                        i++;
+                        program.Add(OpCodes.LD);
+                        if(tokens[i].type != Token.WORD) {
+                            throw new Exception("Unexpected token, expected word, got: " + tokens[i].type);
+                        }
+                        string register = tokens[i].value as string;
+                        byte regB = register_to_byte(register);
+                        i++;
+                        if (register == "A" || register == "B" || register == "E") {
+                            program.Add(BaseTypes.BYTE);
+                            program.Add(regB);
+                            AssembleByte();
+                        } else if (register == "AX" || register == "BX" || register == "EX") {
+                            program.Add(BaseTypes.INT);
+                            program.Add(regB);
+                            AssembleInt();
+                        } else if (register == "DA" || register == "DB") {
+                            program.Add(BaseTypes.UINT);
+                            program.Add(regB);
+                            AssembleUInt();
+                        } else if (register == "EAX" || register == "EBX" || register == "EEX") {
+                            program.Add(BaseTypes.FLOAT);
+                            program.Add(regB);
+                            AssembleFloat();
+                        }
+                    } else if (word == "MV") {
+                        i++;
+                        program.Add(OpCodes.MV);
+                        string registerA = tokens[i].value as string;
+                        i++;
+                        string registerB = tokens[i].value as string;
+                        if (registerA == "A" || registerA == "B" || registerA == "E") {
+                            if(registerB == "A" || registerB == "B" || registerB == "E") {
+                                program.Add(register_to_byte(registerA));
+                                program.Add(register_to_byte(registerB));
+                            } else {
+                                throw new Exception("Can only move 8 bit registers to 8 bit registers!");
+                            }
+                        } else if (registerA == "AX" || registerA == "BX" || registerA == "EX") {
+                            if(registerB == "AX" || registerB == "BX" || registerB == "EX") {
+                                program.Add(register_to_byte(registerA));
+                                program.Add(register_to_byte(registerB));
+                            } else {
+                                throw new Exception("Can only move 32 bit registers to 32 bit registers!");
+                            }
+                        } else if (registerA == "DA" || registerA == "DB") {
+                            if(registerB == "DA" || registerB == "DB") {
+                                program.Add(register_to_byte(registerA));
+                                program.Add(register_to_byte(registerB));
+                            } else {
+                                throw new Exception("Can only move unsigned 32 bit registers to unsigned 32 bit registers!");
+                            }
+                        } else if (registerA == "EAX" || registerA == "EBX" || registerA == "EEX") {
+                            if(registerB == "EAX" || registerB == "EBX" || registerB == "EEX") {
+                                program.Add(register_to_byte(registerA));
+                                program.Add(register_to_byte(registerB));
+                            } else {
+                                throw new Exception("Can only move float registers to float registers!");
+                            }
+                        }
+                    } else if (word == "INT") {
+                        i++;
+                        byte n = 0;
+                        if(tokens[i].type == Token.BYTE_LIT) {
+                            n = (byte)tokens[i].value;
+                        } else if (tokens[i].type == Token.INT_LIT) {
+                            n = (byte)(int)tokens[i].value;
+                        }
+                        program.Add(OpCodes.INT);
+                        program.Add(n);
+                    } else if (tokens[i].value as string == "SET_PAGE_STACK") {
+                        program.Add(OpCodes.SET_PAGE_STACK);
+                    } else if (tokens[i].value as string == "SET_PAGE_HEAP") {
+                        program.Add(OpCodes.SET_PAGE_HEAP);
+                    } else if (tokens[i].value as string == "PAGE_INIT_MEM") {
+                        program.Add(OpCodes.PAGE_INIT_MEM);
+                    } else if (tokens[i].value as string == "LODS") {
+                        program.Add(OpCodes.LODS);
+                    } else if (tokens[i + 1].type == Token.SYMBOL && (char)tokens[i + 1].value == ':') {
+                        symbolTable.Add(tokens[i].value as string, (uint)program.Count);
+                    } else if (tokens[i].value as string == "DB") {
+                         i++;
+                         if (tokens[i].type != Token.BYTE_LIT) {
+                            throw new Exception("DB must be succeded by a byte!");
+                         }
+                         program.Add((byte)tokens[i].value);
+                    } else if (tokens[i].value as string == "DI") {
+                         i++;
+                         if (tokens[i].type != Token.INT_LIT) {
+                            throw new Exception("DI must be succeded by an int!");
+                         }
+                         program.AddRange(BitConverter.GetBytes((int)tokens[i].value));
+                    } else if (tokens[i].value as string == "DUI") {
+                         i++;
+                         if (tokens[i].type != Token.INT_LIT) {
+                            throw new Exception("DUI must be succeded by an unsigned int!");
+                         }
+                         program.AddRange(BitConverter.GetBytes((uint)(int)tokens[i].value));
+                    } else if (tokens[i].value as string == "DF") {
+                         i++;
+                         if (tokens[i].type != Token.FLOAT_LIT) {
+                            throw new Exception("DF must be succeded by a flaot!");
+                         }
+                         program.AddRange(BitConverter.GetBytes((float)tokens[i].value));
+                    } else if (tokens[i].value as string == "DS") {
+                         i++;
+                         if (tokens[i].type != Token.STRING_LIT) {
+                            throw new Exception("DS must be succeded by a string!");
+                         }
+                         string str = tokens[i].value as string;
+                         byte[] bytes = new byte[str.Length + 4];
+                         for(int j = 0; j < str.Length; j++) {
+                            bytes[j + 4] = (byte)str[j];
+                         }
+                         byte[] len = BitConverter.GetBytes(str.Length);
+                         bytes[0] = len[0];
+                         bytes[1] = len[1];
+                         bytes[2] = len[2];
+                         bytes[3] = len[3];
+                         program.AddRange(bytes);
+                    }
+                }
+            }
+            InsertCalls();
 		}
+
+        public void AssembleByte() {
+            if(tokens[i].type == Token.BYTE_LIT) {
+                program.Add((byte)tokens[i].value);
+            } else if (tokens[i].type == Token.INT_LIT) {
+                program.Add((byte)(int)tokens[i].value);
+            } else if (tokens[i].type == Token.CHAR_LIT) {
+                program.Add((byte)(char)tokens[i].value);
+            } else {
+                throw new Exception("Unexpected token, expected byte, got: " + tokens[i].type);
+            }
+        }
+
+        public void AssembleInt() {
+            if  (tokens[i].type == Token.INT_LIT) {
+                program.AddRange(BitConverter.GetBytes((int)tokens[i].value));
+            } else if (tokens[i].type == Token.BYTE_LIT) {
+                program.AddRange(BitConverter.GetBytes((int)(byte)tokens[i].value));
+            } else {
+                throw new Exception("Unexpected token, expected int, got: " + tokens[i].type);
+            }
+        }
+
+        public void AssembleUInt() {
+            if (tokens[i].type == Token.BYTE_LIT) {
+                program.AddRange(BitConverter.GetBytes((uint)(byte)tokens[i].value));
+            } else if (tokens[i].type == Token.INT_LIT) {
+                program.AddRange(BitConverter.GetBytes((uint)(int)tokens[i].value));
+            } else if (tokens[i].type == Token.SYMBOL && (char)tokens[i].value == '[') {
+                i++;
+                string name = tokens[i].value as string;
+                if(symbolTable.ContainsKey(name)) {
+                    program.AddRange(BitConverter.GetBytes(symbolTable[name]));
+                } else {
+                    callTable.Add(new Tuple<int,string>(program.Count,name));
+                    program.AddRange(new byte[] { 0,0,0,0 });
+                }
+            } else {
+                throw new Exception("Unexpected token, expected uint, got: " + tokens[i].type);
+            }
+        }
+
+        public void AssembleFloat() {
+            if (tokens[i].type == Token.BYTE_LIT || tokens[i].type == Token.INT_LIT || tokens[i].type == Token.FLOAT_LIT) {
+                program.AddRange(BitConverter.GetBytes((float)tokens[i].value));
+            } else {
+                throw new Exception("Unexpected token, expected float, got: " + tokens[i].type);
+            }
+        }
+
+        public void InsertCalls() {
+            foreach(Tuple<int,string> key in callTable) {
+                if(symbolTable.ContainsKey(key.Item2)) {
+                    byte[] address = BitConverter.GetBytes(symbolTable[key.Item2]);
+                    program[key.Item1 + 0] = address[0];
+                    program[key.Item1 + 1] = address[1];
+                    program[key.Item1 + 2] = address[2];
+                    program[key.Item1 + 3] = address[3];
+                } else {
+                    throw new Exception("Symbol: " + key.Item2 + " does not exist in program!");
+                }
+            }
+        }
 	}
 }
-

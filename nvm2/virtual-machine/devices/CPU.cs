@@ -57,10 +57,11 @@ namespace nvm2
 		public const byte GET_PAGE_ID = 43;
 		public const byte PAGE_VAT = 44;
 		public const byte REVERSE_VAT = 45;
+		public const byte PAGE_INIT_MEM = 46;
 		//Interupts!
-		public const byte INT = 46; //hardware interupt
-		public const byte SWI = 47; //software interupt
-		public const byte RSWI = 48; //register software interupt (DA)
+		public const byte INT = 47; //hardware interupt
+		public const byte SWI = 48; //software interupt
+		public const byte RSWI = 49; //register software interupt (DA)
 	}
 
 	static class Registers
@@ -268,6 +269,15 @@ namespace nvm2
 					break;
 				case OpCodes.INT:
 					Int();
+					break;
+				case OpCodes.SET_PAGE_STACK:
+					PageSetStack();
+					break;
+				case OpCodes.SET_PAGE_HEAP:
+					PageSetHeap();
+					break;
+				case OpCodes.PAGE_INIT_MEM:
+					PageInitMem();
 					break;
 				default:
 					Nop();
@@ -605,7 +615,22 @@ namespace nvm2
 			machine.IP++;
 			hardwareinterupts[interupt].Run(machine);
 		}
+
+
+		void PageSetStack() {
+			uint addr = machine.DA;
+			machine.BP = addr;
+		}
+
+		void PageSetHeap() {
+			uint addr = machine.DA;
+			machine.HP = addr;
+			machine.SP = addr - 1;
+		}
+
+		void PageInitMem() {
+			machine.pager.SetupMemory(machine.CR3,machine.BP,machine.HP);
+			machine.pager.SetupMemoryAllocation(machine.CR3);
+		}
 	}
-
 }
-
