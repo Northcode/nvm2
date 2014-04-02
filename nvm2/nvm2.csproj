@@ -69,5 +69,6 @@
     <None Include="test-code\hello world.nsm" />
     <None Include="docs\opcodes.txt" />
     <None Include="testing\bios.txt" />
+    <None Include="testing\helloworld.txt" />
   </ItemGroup>
 </Project>

@@ -62,6 +62,11 @@ namespace nvm2
 		public const byte INT = 47; //hardware interupt
 		public const byte SWI = 48; //software interupt
 		public const byte RSWI = 49; //register software interupt (DA)
+		//debug commands
+		public const byte HALT = 50;
+		public const byte DMPPT = 51;
+		public const byte DMPFL = 52;
+		public const byte OCDSM = 53;
 	}
 
 	static class Registers
@@ -119,14 +124,16 @@ namespace nvm2
 				machine.LoadProgram(disk.GetData());
 			} else if (machine.A == GET_ROM_DEVICE) {
 				for (int i = 0; i < machine.NumberOfDevices(); i++) {
-					if(machine.GetDevice(i) is VirtualROMDisk) {
+					VMDevice device = machine.GetDevice(i);
+					if(device is VirtualROMDisk) {
 						machine.EX = i;
 						if(machine.AX <= 0) {
-							break;
+							return;
 						}
 						machine.AX--;
 					}
 				}
+				throw new Exception("No ROM devices found!");
 			}
 		}
 	}
@@ -185,6 +192,11 @@ namespace nvm2
 		public void Run()
 		{
 			while (machine.RN) {
+				if(machine.BRK) {
+					Console.Write("[INFO] CPU HALTED, PRESS ENTER TO RESUME");
+					Console.ReadLine();
+					machine.BRK = false;
+				}
 				byte opcode = NextByte();
 				machine.IP++;
 				ExecuteOpcode(opcode);
@@ -193,6 +205,8 @@ namespace nvm2
 
 		public void ExecuteOpcode(byte opcode)
 		{
+			if(machine.DSM)
+				Console.WriteLine("[" + machine.IP + "] : " + DASM(opcode));
 			switch (opcode){
 			case OpCodes.LD:
 				ExecuteLD();
@@ -317,8 +331,162 @@ namespace nvm2
 			case OpCodes.REVERSE_VAT:
 				ReverseVAT();
 				break;
+			case OpCodes.HALT:
+				machine.BRK = true;
+				break;
+			case OpCodes.DMPPT:
+				DmpPt();
+				break;
+			case OpCodes.DMPFL:
+				DmpFl();
+				break;
+			case OpCodes.OCDSM:
+				OcDsm();
+				break;
 			default:
 				Nop();
+				break;
+			}
+		}
+
+		string DASM (byte opcode)
+		{
+			switch (opcode){
+			case OpCodes.LD:
+				return "LD";
+				
+			case OpCodes.MV:
+				return "MV";
+				
+			case OpCodes.PUSHB:
+				return "PUSHB";
+				
+			case OpCodes.PUSHI:
+				return "PUSHI";
+				
+			case OpCodes.PUSHUI:
+				return "PUSHUI";
+				
+			case OpCodes.PUSHF:
+				return "PUSHF";
+				
+			case OpCodes.PUSHR:
+				return "PUSHR";
+				
+			case OpCodes.POPB:
+				return "POPB";
+				
+			case OpCodes.POPI:
+				return "POPI";
+				
+			case OpCodes.POPUI:
+				return "POPUI";
+				
+			case OpCodes.POPF:
+				return "POPF";
+				
+			case OpCodes.LODS:
+				return "LODS";
+				
+			case OpCodes.POPS:
+				return "POPS";
+				
+			case OpCodes.READB:
+				return "READB";
+				
+			case OpCodes.READI:
+				return "READI";
+				
+			case OpCodes.READUI:
+				return "READUI";
+				
+			case OpCodes.READF:
+				return "READF";
+				
+			case OpCodes.WRITEB:
+				return "WRITEB";
+				
+			case OpCodes.WRITEI:
+				return "WRITEI";
+				
+			case OpCodes.WRITEUI:
+				return "WRITEUI";
+				
+			case OpCodes.WRITEF:
+				return "WRITEF";
+				
+			case OpCodes.JMP:
+				return "JMP";
+				
+			case OpCodes.CALL:
+				return "CALL";
+				
+			case OpCodes.RET:
+				return "RET";
+				
+			case OpCodes.JMPR:
+				return "JMPR";
+				
+			case OpCodes.CALLR:
+				return "CALLR";
+				
+			case OpCodes.MALLOC:
+				return "MALLOC";
+				
+			case OpCodes.FREE:
+				return "FREE";
+				
+			case OpCodes.INT:
+				return "INT";
+				
+			case OpCodes.ALLOC_PAGETABLE:
+				return "ALLOC_PAGETABLE";
+				
+			case OpCodes.ALLOC_PAGE:
+				return "ALLOC_PAGE";
+				
+			case OpCodes.CALL_PAGE:
+				return "CALL_PAGE";
+				
+			case OpCodes.RET_PAGE:
+				return "RET_PAGE";
+				
+			case OpCodes.FREE_PAGETABLE:
+				return "FREE_PAGETABLE";
+				
+			case OpCodes.SET_PAGE_STACK:
+				return "SET_PAGE_STACK";
+				
+			case OpCodes.SET_PAGE_HEAP:
+				return "SET_PAGE_HEAP";
+				
+			case OpCodes.PAGE_INIT_MEM:
+				return "PAGE_INIT_MEM";
+				
+			case OpCodes.GET_PAGE_TABLE_SIZE:
+				return "GET_PAGE_TABLE_SIZE";
+				
+			case OpCodes.GET_PAGE_ID:
+				return "GET_PAGE_ID";
+				
+			case OpCodes.PAGE_VAT:
+				return "PAGE_VAT";
+				
+			case OpCodes.REVERSE_VAT:
+				return "REVERSE_VAT";
+				
+			case OpCodes.HALT:
+				return "HALT";
+				
+			case OpCodes.DMPPT:
+				return "DMPPT";
+				
+			case OpCodes.DMPFL:
+				return "DMPFL";
+				
+
+			default:
+				return "";
 				break;
 			}
 		}
@@ -616,12 +784,13 @@ namespace nvm2
 
 		void Jmp() {
 			uint addr = NextUInt();
-			machine.IP = machine.pager.getVAT(addr,machine.CR3);
+			machine.IP = addr;
 		}
 		void Call() {
 			uint addr = NextUInt();
+			machine.IP += 4;
 			machine.callstack.Push();
-			machine.IP = machine.pager.getVAT(addr,machine.CR3);
+			machine.IP = addr;
 		}
 		void Ret() {
 			uint addr = machine.callstack.ReadReturnAddress();
@@ -630,12 +799,12 @@ namespace nvm2
 		}
 		void JmpR() {
 			uint addr = machine.DA;
-			machine.IP = machine.pager.getVAT(addr,machine.CR3);
+			machine.IP = addr;
 		}
 		void CallR() {
 			uint addr = machine.DA;
 			machine.callstack.Push();
-			machine.IP = machine.pager.getVAT(addr,machine.CR3);
+			machine.IP = addr;
 		}
 
 		void Malloc () {
@@ -656,7 +825,7 @@ namespace nvm2
 
 		void AllocPageTable ()
 		{
-			bool ptmode = (bool)machine.A;
+			bool ptmode = (machine.A > 0);
 			machine.EX = machine.pager.CreatePageEntry(ptmode);
 		}
 
@@ -683,7 +852,57 @@ namespace nvm2
 
 		void CallPage ()
 		{
+			int pt = machine.AX;
+			PageDirectoryEntry page = machine.pager.getEntry(pt);
+			page.return_addr = machine.IP;
+			page.return_page = machine.CR3I;
+			machine.SwitchPage(pt);
+			machine.IP = 0;
+		}
 
+		void RetPage ()	{
+			int retpg = machine.CR3.return_page;
+			uint retaddr = machine.CR3.return_addr;
+			machine.SwitchPage(retpg);
+			machine.IP = retaddr;
+		}
+
+		void FreePageTable () {
+			int table = machine.AX;
+			machine.pager.FreePageEntry(machine.pager.getEntry(table));
+		}
+
+		void GetPageTableSize() {
+			int page = machine.AX;
+			machine.EX = (int)machine.pager.GetPageDirectoryEntrySize(machine.pager.getEntry(page));
+		}
+
+		void GetPageId ()
+		{
+			machine.EX = machine.CR3I;
+		}
+
+		void PageVAT() {
+			machine.DB = machine.pager.getVAT(machine.DA, machine.CR3);
+		}
+
+		void ReverseVAT() {
+			machine.DB = machine.pager.reverseVAT(machine.DA);
+		}
+
+		void DmpPt ()
+		{
+			machine.pager.DumpPageTable(machine.CR3);
+		}
+
+		void DmpFl ()
+		{
+			machine.pager.DumpFreeList(machine.CR3);
+		}
+
+		void OcDsm ()
+		{
+			machine.DSM = ! machine.DSM;
 		}
 
 	}

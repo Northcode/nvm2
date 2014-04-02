@@ -42,6 +42,7 @@ namespace nvm2
 		public uint CBP; //Callstack base pointer
 		public bool RN; //Run register (true for running/false for terminated)
 		public bool BRK; //Break register (halt until user presses ENTER)
+		public bool DSM; //Dissasembly output toggle register
 
 		// Helper classes
 		internal CallStack callstack;
@@ -100,7 +101,7 @@ namespace nvm2
 		}
 
 		public VMDevice GetDevice(int device) {
-			if (device > 0 && device < devices.Length) {
+			if (device >= 0 && device < devices.Length) {
 				return devices[device];
 			}
 			throw new ArgumentOutOfRangeException("Device does not exist: " + device.ToString());
@@ -113,7 +114,7 @@ namespace nvm2
 		public void LoadProgram (byte[] data)
 		{
 			EX = pager.CreatePageEntry(Pager.PAGE_USER_MODE);
-			PageDirectoryEntry entry = pager.getEntry(CR3I);
+			PageDirectoryEntry entry = pager.getEntry(EX);
 			pager.LoadProgram(data,entry);
 		}
 

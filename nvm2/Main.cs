@@ -19,18 +19,33 @@ namespace nvm2
 			string bioscode = "";
 			bool output = false;
 			string outputfile = "";
+			bool compileonly = false;
+
+
+#if DEBUG
+			string inpdata = Console.ReadLine();
+			if(inpdata == "") {
+				inpdata = "-cd ../../testing -i bios.txt -o bios -rd helloworld";
+			}
+			args = inpdata.Split(' ');
+#endif
 
 			for (int i = 0; i < args.Length; i++) {
 				if (args [i] == "-rd") {
 					i++;
 					extradevices.Add (new VirtualROMDisk (args [i]));
-				} else if (args [i] == "-b") {
+				} else if (args [i] == "-i") {
 					i++;
 					bioscode = File.ReadAllText (args [i]);
 				} else if (args [i] == "-o") {
 					output = true;
 					i++;
 					outputfile = args [i];
+				} else if (args [i] == "-cd") {
+					i++;
+					Directory.SetCurrentDirectory(args[i]);
+				} else if (args[i] == "-c") {
+					compileonly = true;
 				}
 			}
 
@@ -55,6 +70,9 @@ namespace nvm2
 				File.WriteAllBytes (outputfile, bios);
 			}
 
+			if(compileonly)
+				return;
+
 			/*
 			for(int i = 0; i < bios.Length; i++) {
 				Console.WriteLine(i + ": " + bios[i]);
@@ -62,6 +80,9 @@ namespace nvm2
 			*/
 
 			vm machine = new vm();
+			foreach (VMDevice device in extradevices) {
+				machine.LoadDevice(device);
+			}
 			machine.LoadBios(bios);
 			machine.Start();
 

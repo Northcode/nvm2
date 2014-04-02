@@ -12,6 +12,9 @@ namespace nvm2
 		public uint base_pointer;
 		public uint heap_pointer;
 		public uint free_pointer;
+
+		public int return_page;
+		public uint return_addr;
 	}
 
 	public class Pager
@@ -156,9 +159,12 @@ namespace nvm2
 			return (addr2 - addr1 == size);
 		}
 
-		public int reverseVAT(uint address) {
+		public uint reverseVAT(uint address) {
 			int frame = (int)address / Frame.FRAME_SIZE;
-			return ram.getFrame(frame).PageTable;
+			int pagetable = ram.getFrame(frame).PageTable;
+			uint offset = (uint)(address - frame * Frame.FRAME_SIZE);
+			uint addr = (uint)(pagetable + offset);
+			return addr;
 		}
 
 		public uint[] ReadPageTable(PageDirectoryEntry entry) {
@@ -431,7 +437,6 @@ namespace nvm2
 			//loop through freelist to find where we need to put the pointers
 			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry);) {
 				uint nextblock = ram.ReadUInt(getVAT(addr, entry)); //read address of next free block
-				uint blocksize = ram.ReadUInt(getVAT(addr + 4, entry)); //read size of current free block
 				if (address < nextblock && address > addr) { //block is between current and next block
 					Console.WriteLine("address between " + lastaddr + " and " + nextblock);
 					if(address + 8 < nextblock) {

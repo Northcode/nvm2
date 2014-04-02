@@ -109,6 +109,7 @@ namespace nvm2
                 else if (code[i] == '"')
                 {
                     bool escaped = false;
+					bool writtenescape = false;
                     bool r = true;
                     StringBuilder strb = new StringBuilder();
                     i++;
@@ -117,7 +118,8 @@ namespace nvm2
                     {
                         if (escaped && code[i] == 'n')
                         {
-                            strb.Append("\\");
+                            strb.Append("\n");
+							writtenescape = true;
                         }
                         escaped = false;
                         if (code[i] == '\\')
@@ -126,7 +128,10 @@ namespace nvm2
                         }
                         else
                         {
-                            strb.Append(code[i]);
+							if(!writtenescape) {
+                            	strb.Append(code[i]);
+							}
+							writtenescape = false;
                         }
                         i++;
                         if (!escaped)
@@ -258,15 +263,103 @@ namespace nvm2
                         }
                         program.Add(OpCodes.INT);
                         program.Add(n);
+                    } 
+
+					else if (tokens[i].value as string == "ALLOC_PAGE") {
+                        program.Add(OpCodes.ALLOC_PAGE);
+                    } else if (tokens[i].value as string == "PUSHB") {
+						program.Add(OpCodes.PUSHB); i++;
+						AssembleByte();
+                    } else if (tokens[i].value as string == "PUSHI") {
+						program.Add(OpCodes.PUSHI); i++;
+						AssembleInt();
+                    } else if (tokens[i].value as string == "PUSHUI") {
+						program.Add(OpCodes.PUSHUI); i++;
+						AssembleUInt();
+                    } else if (tokens[i].value as string == "PUSHR") {
+						program.Add(OpCodes.PUSHR); i++;
+						AssembleFloat();
+                    } else if (tokens[i].value as string == "LODS") {
+                        program.Add(OpCodes.LODS);
+					} else if (tokens[i].value as string == "POPB") {
+                        program.Add(OpCodes.POPB);
+                    } else if (tokens[i].value as string == "POPI") {
+                        program.Add(OpCodes.POPI);
+                    } else if (tokens[i].value as string == "POPUI") {
+                        program.Add(OpCodes.POPUI);
+                    } else if (tokens[i].value as string == "POPF") {
+                        program.Add(OpCodes.POPF);
+                    } else if (tokens[i].value as string == "POPS") {
+                        program.Add(OpCodes.POPS);
+                    } else if (tokens[i].value as string == "READB") {
+                        program.Add(OpCodes.READB);
+                    } else if (tokens[i].value as string == "READI") {
+                        program.Add(OpCodes.READI);
+                    } else if (tokens[i].value as string == "READUI") {
+                        program.Add(OpCodes.READUI);
+                    } else if (tokens[i].value as string == "READF") {
+                        program.Add(OpCodes.READF);
+                    } else if (tokens[i].value as string == "WRITEB") {
+                        program.Add(OpCodes.WRITEB);
+                    } else if (tokens[i].value as string == "WRITEI") {
+                        program.Add(OpCodes.WRITEI);
+                    } else if (tokens[i].value as string == "WRITEUI") {
+                        program.Add(OpCodes.WRITEUI);
+                    } else if (tokens[i].value as string == "WRITEF") {
+                        program.Add(OpCodes.WRITEF);
+                    } else if (tokens[i].value as string == "JMP") {
+						program.Add(OpCodes.JMP); i++;
+						AssembleUInt();
+                    } else if (tokens[i].value as string == "CALL") {
+						program.Add(OpCodes.CALL); i++;
+						AssembleUInt();
+                    } else if (tokens[i].value as string == "RET") {
+                        program.Add(OpCodes.RET);
+                    } else if (tokens[i].value as string == "JMPR") {
+                        program.Add(OpCodes.JMPR);
+                    } else if (tokens[i].value as string == "CALLR") {
+                        program.Add(OpCodes.CALLR);
+                    } else if (tokens[i].value as string == "MALLOC") {
+                        program.Add(OpCodes.MALLOC);
+                    } else if (tokens[i].value as string == "FREE") {
+                        program.Add(OpCodes.FREE);
+                    } else if (tokens[i].value as string == "ALLOC_PAGETABLE") {
+						program.Add(OpCodes.ALLOC_PAGETABLE);
+					} else if (tokens[i].value as string == "ALLOC_PAGE") {
+                        program.Add(OpCodes.ALLOC_PAGE);
+                    } else if (tokens[i].value as string == "CALL_PAGE") {
+                        program.Add(OpCodes.CALL_PAGE);
+                    } else if (tokens[i].value as string == "RET_PAGE") {
+                        program.Add(OpCodes.RET_PAGE);
+                    } else if (tokens[i].value as string == "FREE_PAGETABLE") {
+                        program.Add(OpCodes.FREE_PAGETABLE);
+                    } else if (tokens[i].value as string == "GET_PAGE_TABLE_SIZE") {
+                        program.Add(OpCodes.GET_PAGE_TABLE_SIZE);
+                    } else if (tokens[i].value as string == "GET_PAGE_ID") {
+                        program.Add(OpCodes.GET_PAGE_ID);
                     } else if (tokens[i].value as string == "SET_PAGE_STACK") {
                         program.Add(OpCodes.SET_PAGE_STACK);
                     } else if (tokens[i].value as string == "SET_PAGE_HEAP") {
                         program.Add(OpCodes.SET_PAGE_HEAP);
                     } else if (tokens[i].value as string == "PAGE_INIT_MEM") {
                         program.Add(OpCodes.PAGE_INIT_MEM);
-                    } else if (tokens[i].value as string == "LODS") {
-                        program.Add(OpCodes.LODS);
-                    } else if (tokens[i + 1].type == Token.SYMBOL && (char)tokens[i + 1].value == ':') {
+                    } else if (tokens[i].value as string == "PAGE_VAT") {
+                        program.Add(OpCodes.PAGE_VAT);
+					} else if (tokens[i].value as string == "REVERSE_VAT") {
+                        program.Add(OpCodes.REVERSE_VAT);
+					} else if (tokens[i].value as string == "PAGE_INIT_MEM") {
+                        program.Add(OpCodes.PAGE_INIT_MEM);
+					} else if (tokens[i].value as string == "HALT") {
+                        program.Add(OpCodes.HALT);
+					} else if (tokens[i].value as string == "DMPPT") {
+                        program.Add(OpCodes.DMPPT);
+					} else if (tokens[i].value as string == "DMPFL") {
+                        program.Add(OpCodes.DMPFL);
+					} else if (tokens[i].value as string == "OCDSM") {
+                        program.Add(OpCodes.OCDSM);
+					}
+
+					else if (tokens[i + 1].type == Token.SYMBOL && (char)tokens[i + 1].value == ':') {
                         symbolTable.Add(tokens[i].value as string, (uint)program.Count);
                     } else if (tokens[i].value as string == "DB") {
                          i++;
