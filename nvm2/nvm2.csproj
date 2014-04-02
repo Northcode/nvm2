@@ -50,6 +50,7 @@
     <Compile Include="virtual-machine\devices\StorageDevice.cs" />
     <Compile Include="virtual-machine\devices\VirtualDataDisk.cs" />
     <Compile Include="Assembler\Assembler.cs" />
+    <Compile Include="virtual-machine\devices\VirtualROMDisk.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="app.desktop">
@@ -62,9 +63,11 @@
     <Folder Include="test-code\" />
     <Folder Include="docs\" />
     <Folder Include="Assembler\" />
+    <Folder Include="testing\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test-code\hello world.nsm" />
     <None Include="docs\opcodes.txt" />
+    <None Include="testing\bios.txt" />
   </ItemGroup>
 </Project>

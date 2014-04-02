@@ -194,105 +194,132 @@ namespace nvm2
 		public void ExecuteOpcode(byte opcode)
 		{
 			switch (opcode){
-				case OpCodes.LD:
-					ExecuteLD();
-					break;
-				case OpCodes.MV:
-					ExecuteMV();
-					break;
-				case OpCodes.PUSHB:
-					PushByte();
-					break;
-				case OpCodes.PUSHI:
-					PushInt();
-					break;
-				case OpCodes.PUSHUI:
-					PushUInt();
-					break;
-				case OpCodes.PUSHF:
-					PushFloat();
-					break;
-				case OpCodes.PUSHR:
-					PushReg();
-					break;
-				case OpCodes.POPB:
-					PopByte();
-					break;
-				case OpCodes.POPI:
-					PopInt();
-					break;
-				case OpCodes.POPUI:
-					PopUInt();
-					break;
-				case OpCodes.POPF:
-					PopFloat();
-					break;
-				case OpCodes.LODS:
-					LoadString();
-					break;
-				case OpCodes.POPS:
-					PopString();
-					break;
-				case OpCodes.READB:
-					ReadB();
-					break;
-				case OpCodes.READI:
-					ReadI();
-					break;
-				case OpCodes.READUI:
-					ReadUI();
-					break;
-				case OpCodes.READF:
-					ReadF();
-					break;
-				case OpCodes.WRITEB:
-					WriteB();
-					break;
-				case OpCodes.WRITEI:
-					WriteI();
-					break;
-				case OpCodes.WRITEUI:
-					WriteUI();
-					break;
-				case OpCodes.WRITEF:
-					WriteF();
-					break;
-				case OpCodes.JMP:
-					Jmp();
-					break;
-				case OpCodes.CALL:
-					Call();
-					break;
-				case OpCodes.RET:
-					Ret();
-					break;
-				case OpCodes.JMPR:
-					JmpR();
-					break;
-				case OpCodes.CALLR:
-					CallR();
-					break;
-				case OpCodes.MALLOC:
-					Malloc();
-					break;
-				case OpCodes.FREE:
-					Free();
-					break;
-				case OpCodes.INT:
-					Int();
-					break;
-				case OpCodes.SET_PAGE_STACK:
-					PageSetStack();
-					break;
-				case OpCodes.SET_PAGE_HEAP:
-					PageSetHeap();
-					break;
-				case OpCodes.PAGE_INIT_MEM:
-					PageInitMem();
-					break;
-				default:
-					Nop();
-					break;
+			case OpCodes.LD:
+				ExecuteLD();
+				break;
+			case OpCodes.MV:
+				ExecuteMV();
+				break;
+			case OpCodes.PUSHB:
+				PushByte();
+				break;
+			case OpCodes.PUSHI:
+				PushInt();
+				break;
+			case OpCodes.PUSHUI:
+				PushUInt();
+				break;
+			case OpCodes.PUSHF:
+				PushFloat();
+				break;
+			case OpCodes.PUSHR:
+				PushReg();
+				break;
+			case OpCodes.POPB:
+				PopByte();
+				break;
+			case OpCodes.POPI:
+				PopInt();
+				break;
+			case OpCodes.POPUI:
+				PopUInt();
+				break;
+			case OpCodes.POPF:
+				PopFloat();
+				break;
+			case OpCodes.LODS:
+				LoadString();
+				break;
+			case OpCodes.POPS:
+				PopString();
+				break;
+			case OpCodes.READB:
+				ReadB();
+				break;
+			case OpCodes.READI:
+				ReadI();
+				break;
+			case OpCodes.READUI:
+				ReadUI();
+				break;
+			case OpCodes.READF:
+				ReadF();
+				break;
+			case OpCodes.WRITEB:
+				WriteB();
+				break;
+			case OpCodes.WRITEI:
+				WriteI();
+				break;
+			case OpCodes.WRITEUI:
+				WriteUI();
+				break;
+			case OpCodes.WRITEF:
+				WriteF();
+				break;
+			case OpCodes.JMP:
+				Jmp();
+				break;
+			case OpCodes.CALL:
+				Call();
+				break;
+			case OpCodes.RET:
+				Ret();
+				break;
+			case OpCodes.JMPR:
+				JmpR();
+				break;
+			case OpCodes.CALLR:
+				CallR();
+				break;
+			case OpCodes.MALLOC:
+				Malloc();
+				break;
+			case OpCodes.FREE:
+				Free();
+				break;
+			case OpCodes.INT:
+				Int();
+				break;
+			case OpCodes.ALLOC_PAGETABLE:
+				AllocPageTable();
+				break;
+			case OpCodes.ALLOC_PAGE:
+				AllocPage();
+				break;
+			case OpCodes.CALL_PAGE:
+				CallPage();
+				break;
+			case OpCodes.RET_PAGE:
+				RetPage();
+				break;
+			case OpCodes.FREE_PAGETABLE:
+				FreePageTable();
+				break;
+			case OpCodes.SET_PAGE_STACK:
+				PageSetStack();
+				break;
+			case OpCodes.SET_PAGE_HEAP:
+				PageSetHeap();
+				break;
+			case OpCodes.PAGE_INIT_MEM:
+				PageInitMem();
+				break;
+			case OpCodes.GET_PAGE_TABLE_SIZE:
+				GetPageTableSize();
+				break;
+			case OpCodes.GET_PAGE_ID:
+				GetPageId();
+				break;
+			case OpCodes.PAGE_VAT:
+				PageVAT();
+				break;
+			case OpCodes.REVERSE_VAT:
+				ReverseVAT();
+				break;
+			default:
+				Nop();
+				break;
 			}
 		}
 
@@ -627,6 +654,16 @@ namespace nvm2
 			hardwareinterupts[interupt].Run(machine);
 		}
 
+		void AllocPageTable ()
+		{
+			bool ptmode = (bool)machine.A;
+			machine.EX = machine.pager.CreatePageEntry(ptmode);
+		}
+
+		void AllocPage ()
+		{
+			machine.pager.AddPage(machine.CR3);
+		}
 
 		void PageSetStack() {
 			uint addr = machine.DA;
@@ -643,5 +680,11 @@ namespace nvm2
 			machine.pager.SetupMemory(machine.CR3,machine.BP,machine.HP);
 			machine.pager.SetupMemoryAllocation(machine.CR3);
 		}
+
+		void CallPage ()
+		{
+
+		}
+
 	}
 }
