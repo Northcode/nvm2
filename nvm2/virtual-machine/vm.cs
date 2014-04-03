@@ -54,7 +54,7 @@ namespace nvm2
 			cpu = new CPU(this); // Initializes the cpu
 			ram = new Memory(PAGE_DIRECTORY_SIZE * Frame.FRAME_SIZE); //Allocates enough ram to fit number of page tables allowed
 			hdi = new HDI("disk0"); //Maps a folder to the hard disk interface
-			disk0 = new VirtualDataDisk(); // Virtual data disk
+			disk0 = new VirtualDataDisk("vhd.nvmd"); // Virtual data disk
 
 			devices = new VMDevice[] {
 				cpu, // Processer, device 0

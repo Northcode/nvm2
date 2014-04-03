@@ -1,23 +1,21 @@
 using System;
+using System.IO;
 
 namespace nvm2
 {
 	public class VirtualDataDisk : StorageDevice
 	{
-		byte[] data;
+		string filename;
+		FileStream stream;
 
-		public VirtualDataDisk ()
+		public VirtualDataDisk (string filename)
 		{
+			this.filename = filename;
 		}
 
 		public override byte[] GetData ()
 		{
-			return data;
-		}
-
-		public void Load (byte[] Data)
-		{
-			data = Data;
+			return File.ReadAllBytes(filename);
 		}
 	}
 }

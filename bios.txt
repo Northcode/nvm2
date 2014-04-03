@@ -1,15 +1,5 @@
 CALL [initmem]
-LD DA [question]
-CALL [prtstr]
-LD DA [name]
-CALL [readstr]
-MV DB DA
-LD DA [yournameis]
-CALL [prtstr]
-MV DA DB
-CALL [prtstr]
-LD A 13
-CALL [prtch]
+
 CALL [terminate]
 
 initmem:
@@ -28,11 +18,6 @@ RET
 prtstr:
 LODS
 LD A 1
-INT 1
-RET
-
-prtch:
-LD A 0
 INT 1
 RET
 

@@ -179,6 +179,56 @@ namespace nvm2
 		}
 	}
 
+	class HDIInterupt : HardwareInterupt
+	{
+		public const byte GETDIR = 0;
+		public const byte CHANGEDIR = 1;
+		public const byte CREATEDIR = 2;
+		public const byte CREATEFILE = 3;
+		public const byte OPENFILE = 4;
+		public const byte CLOSEFILE = 5;
+		public const byte READBYTES = 6;
+		public const byte WRITEBYTES = 7;
+		public const byte READALLBYTES = 8;
+		public const byte LOADPROGRAM = 9;
+
+		public HDIInterupt() {
+		}
+
+		public override void Run(vm machine) {
+			if(machine.A == GETDIR)	{
+				machine.pager.Push(machine.hdi.GetWorkingDirectory(),machine.CR3);
+			} else if (machine.A == CHANGEDIR) {
+				string path = machine.pager.PopString(machine.CR3);
+				machine.hdi.ChangeDirectory(path);
+			} else if (machine.A == CREATEDIR) {
+				string dir = machine.pager.PopString(machine.CR3);
+				machine.hdi.CreateDirectory(dir);
+			} else if (machine.A == CREATEFILE) {
+				string filename = machine.pager.PopString(machine.CR3);
+				machine.hdi.CreateFile(filename);
+			} else if (machine.A == OPENFILE) {
+				string filename = machine.pager.PopString(machine.CR3);
+				machine.hdi.OpenFile(filename);
+			} else if (machine.A == CLOSEFILE) {
+				machine.hdi.CloseFile();
+			} else if (machine.A == READBYTES) {
+				int len = machine.AX;
+				uint addr = machine.DA;
+				byte[] data = machine.hdi.ReadBytes(len);
+				if(machine.pager.checkVAT(addr,len)) {
+					machine.ram.Write(machine.pager.getVAT(addr),data);
+				} else {
+					machine.pager.Write(addr,data);
+				}
+			} else if (machine.A == WRITEBYTES) {
+			} else if (machine.A == LOADPROGRAM) {
+				byte[] program = machine.hdi.ReadAllBytes();
+				machine.LoadProgram(program);
+			}
+		}
+	}
+
 	class CPU : ComputeDevice
 	{
 		vm machine;

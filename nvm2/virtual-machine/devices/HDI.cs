@@ -12,6 +12,9 @@ namespace nvm2
 
 		public HDI (string MappedPath)
 		{
+			if(!Directory.Exists(MappedPath)) {
+				Directory.CreateDirectory(MappedPath);
+			}
 			mapped_path = MappedPath;
 			working_dir = "";
 		}
@@ -26,7 +29,7 @@ namespace nvm2
 			return Directory.GetFiles(GetWorkingDirectory());
 		}
 
-		public string[] ListFiles ()
+		public string[] ReadDirectories ()
 		{
 			return Directory.GetDirectories(GetWorkingDirectory());
 		}
@@ -53,6 +56,10 @@ namespace nvm2
 			stream = File.Open(file,FileMode.Open);
 		}
 
+		public void CloseFile() {
+			stream.Close();
+		}
+
 		public byte[] ReadBytes (int length)
 		{
 			byte[] data = new byte[length];
@@ -74,6 +81,18 @@ namespace nvm2
 			if (stream != null) {
 				stream.Write(data,0,data.Length);
 			}
+		}
+
+		public byte[] ReadAllBytes()
+		{
+			byte[] data = null;
+			if(stream != null) {
+				stream.Position = 0;
+				long length = stream.Length;
+				data = new byte[length];
+				stream.Read (data, 0, (int)length);
+			}
+			return data;
 		}
 	}
 }
