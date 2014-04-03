@@ -378,7 +378,35 @@ namespace nvm2
                         program.Add(OpCodes.DMPFL);
 					} else if (tokens[i].value as string == "OCDSM") {
                         program.Add(OpCodes.OCDSM);
-					}
+					} else if (tokens[i].value as string == "JE") {
+                        program.Add(OpCodes.JE); i++;
+                        AssembleUInt();
+                    } else if (tokens[i].value as string == "JN") {
+                        program.Add(OpCodes.JN); i++;
+                        AssembleUInt();
+                    } else if (tokens[i].value as string == "LT") {
+                        program.Add(OpCodes.LT); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "LE") {
+                        program.Add(OpCodes.LE); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "EQ") {
+                        program.Add(OpCodes.EQ); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "NE") {
+                        program.Add(OpCodes.NE); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "GE") {
+                        program.Add(OpCodes.GE); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "GT") {
+                        program.Add(OpCodes.GT); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "JER") {
+                        program.Add(OpCodes.JER);
+                    } else if (tokens[i].value as string == "JNR") {
+                        program.Add(OpCodes.JNR);
+                    }
 
 					else if (tokens[i + 1].type == Token.SYMBOL && (char)tokens[i + 1].value == ':') {
                         symbolTable.Add(tokens[i].value as string, (uint)program.Count);

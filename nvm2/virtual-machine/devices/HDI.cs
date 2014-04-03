@@ -51,6 +51,14 @@ namespace nvm2
 			}
 		}
 
+		public bool DirectoryExists(string name) {
+			return Directory.Exists(Path.Combine(mapped_path,name));
+		}
+
+		public bool FileExists(string name) {
+			return File.Exists(Path.Combine(mapped_path,name));
+		}
+
 		public void OpenFile (string file)
 		{
 			stream = File.Open(file,FileMode.Open);

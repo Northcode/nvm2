@@ -1,9 +1,28 @@
+OCDSM
 CALL [initmem]
+
+LD DA [greetmsg]
+CALL [prtstr]
+
+CALL [checkforos]
+JN [osnotfound]
+
+CALL [loados]
+
+LD DA [exitmsg]
+CALL [prtstr]
+HALT
 
 CALL [terminate]
 
+osnotfound:
+LD DA [osnotfoundmsg]
+CALL [prtstr]
+HALT
+CALL [terminate]
+
 initmem:
-LD DA 256
+LD DA 300
 SET_PAGE_STACK
 LD DA 512
 SET_PAGE_HEAP
@@ -21,12 +40,23 @@ LD A 1
 INT 1
 RET
 
-readstr:
-LD A 5
-INT 1
-POPS
+loados:
+LD DA [osfilename]
+LODS
+LD A 9
+INT 2
+MV AX EX
+CALL_PAGE
 RET
 
-question: DS "What is your name? "
-name: DS "                       "
-yournameis: DS "Your name is: "
+checkforos:
+LD DA [osfilename]
+LODS
+LD A 11
+INT 2
+RET
+
+osfilename: DS "os"
+exitmsg: DS "OS execution finished, returned to bios. Will now exit\n"
+greetmsg: DS "Welcome to nvm bios 0.1!\n"
+osnotfoundmsg: DS "No operation system found!\n"

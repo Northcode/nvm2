@@ -67,6 +67,17 @@ namespace nvm2
 		public const byte DMPPT = 51;
 		public const byte DMPFL = 52;
 		public const byte OCDSM = 53;
+		//conditional opcodes
+		public const byte JE = 54;
+		public const byte JN = 55;
+		public const byte LT = 56;
+		public const byte LE = 57;
+		public const byte EQ = 58;
+		public const byte GE = 59;
+		public const byte GT = 60;
+		public const byte NE = 61;
+		public const byte JER = 62;
+		public const byte JNR = 63;
 	}
 
 	static class Registers
@@ -191,11 +202,13 @@ namespace nvm2
 		public const byte WRITEBYTES = 7;
 		public const byte READALLBYTES = 8;
 		public const byte LOADPROGRAM = 9;
+		public const byte DIREXISTS = 10;
+		public const byte FILEEXISTS = 11;
 
 		public HDIInterupt() {
 		}
 
-		public override void Run(vm machine) {
+		public void Run(vm machine) {
 			if(machine.A == GETDIR)	{
 				machine.pager.Push(machine.hdi.GetWorkingDirectory(),machine.CR3);
 			} else if (machine.A == CHANGEDIR) {
@@ -216,15 +229,19 @@ namespace nvm2
 				int len = machine.AX;
 				uint addr = machine.DA;
 				byte[] data = machine.hdi.ReadBytes(len);
-				if(machine.pager.checkVAT(addr,len)) {
-					machine.ram.Write(machine.pager.getVAT(addr),data);
+				if(machine.pager.checkVAT(addr,(uint)len,machine.CR3)) {
 				} else {
-					machine.pager.Write(addr,data);
 				}
 			} else if (machine.A == WRITEBYTES) {
 			} else if (machine.A == LOADPROGRAM) {
 				byte[] program = machine.hdi.ReadAllBytes();
 				machine.LoadProgram(program);
+			} else if (machine.A == DIREXISTS) {
+				string name = machine.pager.PopString(machine.CR3);
+				machine.CP = machine.hdi.DirectoryExists(name);
+			} else if (machine.A == FILEEXISTS) {
+				string name = machine.pager.PopString(machine.CR3);
+				machine.CP = machine.hdi.FileExists(name);
 			}
 		}
 	}
@@ -241,7 +258,8 @@ namespace nvm2
 
 			hardwareinterupts = new HardwareInterupt[] {
 				new CoreInterupt(),
-				new TerminalInterupt()
+				new TerminalInterupt(),
+				new HDIInterupt(),
 			};
 		}
 
@@ -419,6 +437,36 @@ namespace nvm2
 				break;
 			case OpCodes.OCDSM:
 				OcDsm();
+				break;
+			case OpCodes.JE:
+				Je();
+				break;
+			case OpCodes.JN:
+				Jn();
+				break;
+			case OpCodes.LT:
+				Lt();
+				break;
+			case OpCodes.LE:
+				Le();
+				break;
+			case OpCodes.EQ:
+				Eq();
+				break;
+			case OpCodes.GE:
+				Ge();
+				break;
+			case OpCodes.GT:
+				Gt();
+				break;
+			case OpCodes.NE:
+				Ne();
+				break;
+			case OpCodes.JER:
+				JeR();
+				break;
+			case OpCodes.JNR:
+				JnR();
 				break;
 			default:
 				Nop();
@@ -1038,7 +1086,10 @@ namespace nvm2
 		void Int () {
 			byte interupt = NextByte();
 			machine.IP++;
-			hardwareinterupts[interupt].Run(machine);
+			if(interupt > 0 && interupt < hardwareinterupts.Length)
+				hardwareinterupts[interupt].Run(machine);
+			else
+				throw new Exception("No interupt at index: " + interupt);
 		}
 
 		void AllocPageTable ()
@@ -1123,5 +1174,107 @@ namespace nvm2
 			machine.DSM = ! machine.DSM;
 		}
 
+		void Je() {
+			if(machine.CP) {
+				machine.IP = NextUInt();
+			}
+		}
+
+		void Jn() {
+			if(!machine.CP) {
+				machine.IP = NextUInt();
+			}	
+		}
+
+		void Lt() {
+			byte type = NextByte();
+			machine.IP++;
+			if(type == BaseTypes.BYTE) {
+				machine.CP = (machine.A < machine.B);
+			} else if (type == BaseTypes.INT) {
+				machine.CP = (machine.AX < machine.BX);
+			} else if (type == BaseTypes.UINT) {
+				machine.CP = (machine.DA < machine.DB);
+			} else if (type == BaseTypes.FLOAT) {
+				machine.CP = (machine.EAX < machine.EBX);
+			}
+		}
+		void Le() {
+			byte type = NextByte();
+			machine.IP++;
+			if(type == BaseTypes.BYTE) {
+				machine.CP = (machine.A <= machine.B);
+			} else if (type == BaseTypes.INT) {
+				machine.CP = (machine.AX <= machine.BX);
+			} else if (type == BaseTypes.UINT) {
+				machine.CP = (machine.DA <= machine.DB);
+			} else if (type == BaseTypes.FLOAT) {
+				machine.CP = (machine.EAX <= machine.EBX);
+			}
+		}
+		void Eq() {
+			byte type = NextByte();
+			machine.IP++;
+			if(type == BaseTypes.BYTE) {
+				machine.CP = (machine.A == machine.B);
+			} else if (type == BaseTypes.INT) {
+				machine.CP = (machine.AX == machine.BX);
+			} else if (type == BaseTypes.UINT) {
+				machine.CP = (machine.DA == machine.DB);
+			} else if (type == BaseTypes.FLOAT) {
+				machine.CP = (machine.EAX == machine.EBX);
+			}
+		}
+		void Ne() {
+			byte type = NextByte();
+			machine.IP++;
+			if(type == BaseTypes.BYTE) {
+				machine.CP = (machine.A != machine.B);
+			} else if (type == BaseTypes.INT) {
+				machine.CP = (machine.AX != machine.BX);
+			} else if (type == BaseTypes.UINT) {
+				machine.CP = (machine.DA != machine.DB);
+			} else if (type == BaseTypes.FLOAT) {
+				machine.CP = (machine.EAX != machine.EBX);
+			}
+		}
+		void Ge() {
+			byte type = NextByte();
+			machine.IP++;
+			if(type == BaseTypes.BYTE) {
+				machine.CP = (machine.A >= machine.B);
+			} else if (type == BaseTypes.INT) {
+				machine.CP = (machine.AX >= machine.BX);
+			} else if (type == BaseTypes.UINT) {
+				machine.CP = (machine.DA >= machine.DB);
+			} else if (type == BaseTypes.FLOAT) {
+				machine.CP = (machine.EAX >= machine.EBX);
+			}
+		}
+		void Gt() {
+			byte type = NextByte();
+			machine.IP++;
+			if(type == BaseTypes.BYTE) {
+				machine.CP = (machine.A > machine.B);
+			} else if (type == BaseTypes.INT) {
+				machine.CP = (machine.AX > machine.BX);
+			} else if (type == BaseTypes.UINT) {
+				machine.CP = (machine.DA > machine.DB);
+			} else if (type == BaseTypes.FLOAT) {
+				machine.CP = (machine.EAX > machine.EBX);
+			}
+		}
+
+		void JeR() {
+			if(machine.CP) {
+				machine.IP = machine.DA;
+			}
+		}
+
+		void JnR() {
+			if(!machine.CP) {
+				machine.IP = machine.DA;
+			}	
+		}
 	}
 }
