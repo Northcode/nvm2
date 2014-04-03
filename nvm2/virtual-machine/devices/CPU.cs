@@ -148,6 +148,8 @@ namespace nvm2
 		public const byte READSTR = 5;
 		public const byte READINT = 6;
 		public const byte READFLT = 7;
+		public const byte PRINTB = 8;
+		public const byte READB = 9;
 
 		public void Run (vm machine)
 		{
@@ -169,6 +171,10 @@ namespace nvm2
 				machine.AX = Convert.ToInt32 (Console.ReadLine ());
 			} else if (machine.A == READFLT) {
 				machine.EAX = (float)Convert.ToInt32(Console.ReadLine());
+			} else if (machine.A == PRINTB) {
+				Console.Write(machine.B);
+			} else if (machine.A == READB) {
+				machine.E = Convert.ToByte(Console.ReadLine());
 			}
 		}
 	}
@@ -270,6 +276,27 @@ namespace nvm2
 				break;
 			case OpCodes.WRITEF:
 				WriteF();
+				break;
+			case OpCodes.ADD:
+				Add();
+				break;
+			case OpCodes.SUB:
+				Sub();
+				break;
+			case OpCodes.MUL:
+				Mul();
+				break;
+			case OpCodes.DIV:
+				Div();
+				break;
+			case OpCodes.MOD:
+				Mod();
+				break;
+			case OpCodes.POW:
+				Pow();
+				break;
+			case OpCodes.SQRT:
+				Sqrt();
 				break;
 			case OpCodes.JMP:
 				Jmp();
@@ -414,6 +441,21 @@ namespace nvm2
 				
 			case OpCodes.WRITEF:
 				return "WRITEF";
+			
+			case OpCodes.ADD:
+				return "ADD";
+			case OpCodes.SUB:
+				return "SUB";
+			case OpCodes.MUL:
+				return "MUL";
+			case OpCodes.DIV:
+				return "DIV";
+			case OpCodes.MOD:
+				return "MOD";
+			case OpCodes.POW:
+				return "POW";
+			case OpCodes.SQRT:
+				return "SQRT";
 				
 			case OpCodes.JMP:
 				return "JMP";
@@ -645,7 +687,7 @@ namespace nvm2
 					LDREG(regD,machine.IP);
 					break;
 				default:
-					throw new Exception("Invalid register!");
+					throw new Exception("Invalid register! Got source: " + regF + " and dest: " + regD);
 			}
 		}
 
@@ -804,6 +846,133 @@ namespace nvm2
 			uint addr = machine.DA;
 			machine.callstack.Push();
 			machine.IP = addr;
+		}
+
+		void Add() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)(machine.A + machine.B);
+					break;
+				case BaseTypes.INT:
+					machine.EX = machine.AX + machine.BX;
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)machine.DA + machine.DB;
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)machine.EAX + machine.EBX;
+					break;
+			}
+		}
+		void Sub() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)(machine.A - machine.B);
+					break;
+				case BaseTypes.INT:
+					machine.EX = machine.AX - machine.BX;
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)machine.DA - machine.DB;
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)machine.EAX - machine.EBX;
+					break;
+			}
+		}
+		void Mul() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)(machine.A * machine.B);
+					break;
+				case BaseTypes.INT:
+					machine.EX = machine.AX * machine.BX;
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)machine.DA * machine.DB;
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)machine.EAX * machine.EBX;
+					break;
+			}
+		}
+		void Div() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)(machine.A / machine.B);
+					break;
+				case BaseTypes.INT:
+					machine.EX = (int)machine.AX / machine.BX;
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)machine.DA / machine.DB;
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)machine.EAX / machine.EBX;
+					break;
+			}
+		}
+		void Mod() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)(machine.A % machine.B);
+					break;
+				case BaseTypes.INT:
+					machine.EX = machine.AX % machine.BX;
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)machine.DA % machine.DB;
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)machine.EAX % machine.EBX;
+					break;
+			}
+		}
+		void Pow() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)Math.Pow(machine.A,machine.B);
+					break;
+				case BaseTypes.INT:
+					machine.EX = (int)Math.Pow(machine.AX,machine.BX);
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)Math.Pow(machine.DA,machine.DB);
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)Math.Pow(machine.EAX,machine.EBX);
+					break;
+			}
+		}
+		void Sqrt() {
+			byte type = NextByte();
+			machine.IP++;
+			switch(type) {
+				case BaseTypes.BYTE:
+					machine.E = (byte)Math.Sqrt(machine.A);
+					break;
+				case BaseTypes.INT:
+					machine.EX = (int)Math.Sqrt(machine.AX);
+					break;
+				case BaseTypes.UINT:
+					machine.DA = (uint)Math.Sqrt(machine.DA);
+					break;
+				case BaseTypes.FLOAT:
+					machine.EEX = (float)Math.Sqrt(machine.EAX);
+					break;
+			}
 		}
 
 		void Malloc () {

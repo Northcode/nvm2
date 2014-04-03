@@ -1,8 +1,16 @@
 CALL [initmem]
-LD DA [helloworld]
+LD DA [question]
 CALL [prtstr]
+LD DA [name]
+CALL [readstr]
+MV DB DA
+LD DA [yournameis]
+CALL [prtstr]
+MV DA DB
+CALL [prtstr]
+LD A 13
+CALL [prtch]
 CALL [terminate]
-
 
 initmem:
 LD DA 256
@@ -11,13 +19,29 @@ LD DA 512
 SET_PAGE_HEAP
 PAGE_INIT_MEM
 RET
+
 terminate:
 LD A 0
 INT 0
 RET
+
 prtstr:
 LODS
 LD A 1
 INT 1
 RET
-helloworld: DS "Hello World!"
+
+prtch:
+LD A 0
+INT 1
+RET
+
+readstr:
+LD A 5
+INT 1
+POPS
+RET
+
+question: DS "What is your name? "
+name: DS "                       "
+yournameis: DS "Your name is: "

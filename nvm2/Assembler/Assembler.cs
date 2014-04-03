@@ -307,6 +307,27 @@ namespace nvm2
                         program.Add(OpCodes.WRITEUI);
                     } else if (tokens[i].value as string == "WRITEF") {
                         program.Add(OpCodes.WRITEF);
+                    } else if (tokens[i].value as string == "ADD") {
+                        program.Add(OpCodes.ADD); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "SUB") {
+                        program.Add(OpCodes.SUB); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "MUL") {
+                        program.Add(OpCodes.MUL); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "DIV") {
+                        program.Add(OpCodes.DIV); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "MOD") {
+                        program.Add(OpCodes.MOD); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "POW") {
+                        program.Add(OpCodes.POW); i++;
+                        AssembleType();
+                    } else if (tokens[i].value as string == "SQRT") {
+                        program.Add(OpCodes.SQRT); i++;
+                        AssembleType();
                     } else if (tokens[i].value as string == "JMP") {
 						program.Add(OpCodes.JMP); i++;
 						AssembleUInt();
@@ -453,6 +474,26 @@ namespace nvm2
                 program.AddRange(BitConverter.GetBytes((float)tokens[i].value));
             } else {
                 throw new Exception("Unexpected token, expected float, got: " + tokens[i].type);
+            }
+        }
+
+        public void AssembleType() {
+            if(tokens[i].type == Token.WORD) {
+                string word = tokens[i].value as string;
+                switch(word) {
+                    case "BYTE":
+                        program.Add(BaseTypes.BYTE);
+                        break;
+                    case "INT":
+                        program.Add(BaseTypes.INT);
+                        break;
+                    case "UINT":
+                        program.Add(BaseTypes.UINT);
+                        break;
+                    case "FLOAT":
+                        program.Add(BaseTypes.FLOAT);
+                        break;
+                }
             }
         }
 
