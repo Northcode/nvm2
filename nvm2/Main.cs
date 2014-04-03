@@ -16,10 +16,11 @@ namespace nvm2
 		{
 			List<VMDevice> extradevices = new List<VMDevice> ();
 
-			string bioscode = "";
+			string codetocompile = "";
 			bool output = false;
 			string outputfile = "";
-			bool compileonly = false;
+			bool compileflag = false;
+			byte[] biosdata = null;
 
 
 #if DEBUG
@@ -36,7 +37,7 @@ namespace nvm2
 					extradevices.Add (new VirtualROMDisk (args [i]));
 				} else if (args [i] == "-i") {
 					i++;
-					bioscode = File.ReadAllText (args [i]);
+					codetocompile = File.ReadAllText (args [i]);
 				} else if (args [i] == "-o") {
 					output = true;
 					i++;
@@ -45,37 +46,49 @@ namespace nvm2
 					i++;
 					Directory.SetCurrentDirectory(args[i]);
 				} else if (args[i] == "-c") {
-					compileonly = true;
+					compileflag = true;
+				} else if (args[i] == "-b") {
+					i++;
+					biosdata = File.ReadAllBytes(args[i]);
+				} else if (args[i] == "-h") {
+					Console.WriteLine("Northcode Virtual Machine 2");
+					Console.WriteLine("Usage: nvm [options]");
+					Console.WriteLine("Options:");
+					Console.WriteLine("-cd <directory>\t\t: change working directory, useful for loading bios from somewhere outside of the nvm2 folder");
+					Console.WriteLine("-i <file>\t\t: input file, select and inputfile for the Assembler");
+					Console.WriteLine("-c\t\t\t: compile flag, when selected, code from inputfile will be assembled into nasm");
+					Console.WriteLine("-o <file>\t\t: output file, file for compiler to write assembly into");
+					Console.WriteLine("-rd <file>\t\t: assembly file to be loaded as a virtual ROM disk that can be read by the vm");
+					Console.WriteLine("-h\t\t\t: shows this screen of commands");
+					Console.WriteLine("-b <file>\t\t: Loads a bios to the virtual machine, this is the first program that is run");
+					Console.WriteLine();
 				}
 			}
 
-			if (bioscode == "") {
-				StringBuilder stb = new StringBuilder ();
-				string c = "";
-				while ((c = Console.ReadLine()) != "q") {
-					stb.AppendLine (c);
+
+			if (compileflag) {
+				if (codetocompile == "") {
+					StringBuilder stb = new StringBuilder ();
+					string c = "";
+					while ((c = Console.ReadLine()) != "q") {
+						stb.AppendLine (c);
+					}
+					codetocompile = stb.ToString ();
 				}
-				bioscode = stb.ToString ();
+
+				Assembler asm = new Assembler(codetocompile);
+				asm.Scan();
+				asm.Assemble();
+
+				byte[] program = asm.GetProgram();
+
+				if (output) {
+					File.WriteAllBytes (outputfile, program);
+				}
 			}
-
-
-
-			Assembler asm = new Assembler(bioscode);
-			asm.Scan();
-			asm.Assemble();
-
-			byte[] bios = asm.GetProgram();
-
-			if (output) {
-				File.WriteAllBytes (outputfile, bios);
-			}
-
-			if(compileonly)
-				return;
-
 			/*
-			for(int i = 0; i < bios.Length; i++) {
-				Console.WriteLine(i + ": " + bios[i]);
+			for(int i = 0; i < program.Length; i++) {
+				Console.WriteLine(i + ": " + program[i]);
 			}
 			*/
 
@@ -83,7 +96,13 @@ namespace nvm2
 			foreach (VMDevice device in extradevices) {
 				machine.LoadDevice(device);
 			}
-			machine.LoadBios(bios);
+			if(biosdata == null)
+			{
+				Console.WriteLine("No bios loaded!");
+				Console.ReadLine();
+				return;
+			}
+			machine.LoadBios(biosdata);
 			machine.Start();
 
 			/*

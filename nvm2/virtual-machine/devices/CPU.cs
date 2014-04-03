@@ -487,7 +487,6 @@ namespace nvm2
 
 			default:
 				return "";
-				break;
 			}
 		}
 

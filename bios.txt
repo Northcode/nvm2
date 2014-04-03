@@ -1,12 +1,23 @@
+CALL [initmem]
+LD DA [helloworld]
+CALL [prtstr]
+CALL [terminate]
+
+
+initmem:
 LD DA 256
 SET_PAGE_STACK
 LD DA 512
 SET_PAGE_HEAP
 PAGE_INIT_MEM
-LD DA [hello]
+RET
+terminate:
+LD A 0
+INT 0
+RET
+prtstr:
 LODS
 LD A 1
 INT 1
-LD A 0
-INT 0
-hello: DS "hello kristoffer!"
+RET
+helloworld: DS "Hello World!"
