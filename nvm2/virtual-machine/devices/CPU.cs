@@ -1086,7 +1086,7 @@ namespace nvm2
 		void Int () {
 			byte interupt = NextByte();
 			machine.IP++;
-			if(interupt > 0 && interupt < hardwareinterupts.Length)
+			if(interupt >= 0 && interupt < hardwareinterupts.Length)
 				hardwareinterupts[interupt].Run(machine);
 			else
 				throw new Exception("No interupt at index: " + interupt);

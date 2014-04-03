@@ -84,6 +84,11 @@ namespace nvm2
                         tokens.Add(new Token() { type = Token.INT_LIT, value = n });
                     }
                 }
+				else if (code[i] == '#') {
+					while(code[i] != '\n') {
+						i++;
+					}
+				}
                 else if (char.IsLetter(code[i]) || code[i] == '_')
                 {
                     StringBuilder strb = new StringBuilder();

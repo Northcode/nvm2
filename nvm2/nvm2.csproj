@@ -64,11 +64,13 @@
     <Folder Include="docs\" />
     <Folder Include="Assembler\" />
     <Folder Include="testing\" />
+    <Folder Include="testing\disk0\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test-code\hello world.nsm" />
     <None Include="docs\opcodes.txt" />
     <None Include="testing\bios.txt" />
     <None Include="testing\helloworld.txt" />
+    <None Include="testing\os.nsm" />
   </ItemGroup>
 </Project>

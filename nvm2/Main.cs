@@ -26,7 +26,7 @@ namespace nvm2
 #if DEBUG
 			string inpdata = Console.ReadLine();
 			if(inpdata == "") {
-				inpdata = "-cd ../../testing -i bios.txt -o bios -rd helloworld";
+				inpdata = "-cd ../../testing -b bios";
 			}
 			args = inpdata.Split(' ');
 #endif
@@ -85,6 +85,7 @@ namespace nvm2
 				if (output) {
 					File.WriteAllBytes (outputfile, program);
 				}
+				return;
 			}
 			/*
 			for(int i = 0; i < program.Length; i++) {

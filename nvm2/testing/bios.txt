@@ -1,9 +1,62 @@
-LD A 5
-INT 0
-MV AX EX
-LD A 4
-INT 0
-MV AX EX
-CALL_PAGE
+OCDSM
+CALL [initmem]
+
+LD DA [greetmsg]
+CALL [prtstr]
+
+CALL [checkforos]
+JN [osnotfound]
+
+CALL [loados]
+
+LD DA [exitmsg]
+CALL [prtstr]
+HALT
+
+CALL [terminate]
+
+osnotfound:
+LD DA [osnotfoundmsg]
+CALL [prtstr]
+HALT
+CALL [terminate]
+
+initmem:
+LD DA 300
+SET_PAGE_STACK
+LD DA 512
+SET_PAGE_HEAP
+PAGE_INIT_MEM
+RET
+
+terminate:
 LD A 0
 INT 0
+RET
+
+prtstr:
+LODS
+LD A 1
+INT 1
+RET
+
+loados:
+LD DA [osfilename]
+LODS
+LD A 9
+INT 2
+MV AX EX
+CALL_PAGE
+RET
+
+checkforos:
+LD DA [osfilename]
+LODS
+LD A 11
+INT 2
+RET
+
+osfilename: DS "os"
+exitmsg: DS "OS execution finished. Will now exit\n"
+greetmsg: DS "NVM bios 0.1\n"
+osnotfoundmsg: DS "No operation system found!\n"

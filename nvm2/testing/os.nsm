@@ -1,0 +1,21 @@
+CALL [initmem]
+LD DA [welcomemsg]
+CALL [prtstr]
+RET_PAGE
+
+initmem:
+LD DA 300
+SET_PAGE_STACK
+LD DA 512
+SET_PAGE_HEAP
+PAGE_INIT_MEM
+RET
+
+prtstr:
+LODS
+LD A 1
+INT 1
+RET
+
+#text data
+welcomemsg: DS "Welcome to nvm os!"

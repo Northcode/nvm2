@@ -1,15 +1,15 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2/virtual-machine/devices/CPU.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2/testing/bios.txt">
     <Files>
       <File FileName="nvm2/virtual-machine/Pager.cs" Line="576" Column="10" />
       <File FileName="nvm2/virtual-machine/devices/Memory.cs" Line="106" Column="40" />
       <File FileName="nvm2/Main.cs" Line="57" Column="4" />
-      <File FileName="nvm2/virtual-machine/vm.cs" Line="113" Column="24" />
+      <File FileName="nvm2/virtual-machine/vm.cs" Line="113" Column="1" />
       <File FileName="nvm2/virtual-machine/CallStack.cs" Line="18" Column="37" />
-      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="51" Column="36" />
+      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="60" Column="40" />
       <File FileName="nvm2/test-code/hello world.nsm" Line="1" Column="10" />
-      <File FileName="nvm2/testing/bios.txt" Line="6" Column="14" />
+      <File FileName="nvm2/testing/bios.txt" Line="34" Column="6" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -34,10 +34,10 @@
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.ItemProperties.nvm2>
     <MonoDevelop.Ide.CustomExecutionModes>
-      <Data Name="testing" Id="e6fb2d61-7b3d-44a0-b4b3-3ef46cb9e4f1" ModeId="Default" PromptForParameters="True">
+      <Data Name="testing" Id="e6fb2d61-7b3d-44a0-b4b3-3ef46cb9e4f1" ModeId="Default">
         <CommandData>
           <Item Key="MonoDevelop.Ide.Execution.CustomArgsCustomizer">
-            <Value Arguments="-b bios.txt" WorkingDirectory="/home/andreas/git/nvm2/nvm2/testing" ctype="CustomArgsExecutionModeData">
+            <Value Arguments="-b bios" WorkingDirectory="/home/andreas/programming/git/nvm2/nvm2/testing" ctype="CustomArgsExecutionModeData">
               <EnvironmentVariables />
             </Value>
           </Item>
