@@ -1,8 +1,12 @@
-OCDSM
+#uncomment this line for debugging: OCDSM
+
 CALL [initmem]
 
 LD DA [greetmsg]
 CALL [prtstr]
+
+LD A 10
+INT 1
 
 CALL [checkforos]
 JN [osnotfound]
@@ -22,7 +26,7 @@ HALT
 CALL [terminate]
 
 initmem:
-LD DA 300
+LD DA 350
 SET_PAGE_STACK
 LD DA 512
 SET_PAGE_HEAP
@@ -43,6 +47,8 @@ RET
 loados:
 LD DA [osfilename]
 LODS
+LD A 4
+INT 2
 LD A 9
 INT 2
 MV AX EX
@@ -57,6 +63,6 @@ INT 2
 RET
 
 osfilename: DS "os"
-exitmsg: DS "OS execution finished. Will now exit\n"
+exitmsg: DS "Shut down...\n"
 greetmsg: DS "NVM bios 0.1\n"
 osnotfoundmsg: DS "No operation system found!\n"

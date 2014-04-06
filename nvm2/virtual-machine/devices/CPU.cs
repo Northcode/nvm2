@@ -78,6 +78,10 @@ namespace nvm2
 		public const byte NE = 61;
 		public const byte JER = 62;
 		public const byte JNR = 63;
+		//string opcodes
+		public const byte STRLEN = 64;
+		public const byte STRCMP = 65;
+		public const byte STRSUB = 66;
 	}
 
 	static class Registers
@@ -94,6 +98,7 @@ namespace nvm2
 		public const byte EBX = 9;
 		public const byte EEX = 10;
 		public const byte IP = 11;
+		public const byte CP = 12;
 	}
 
 	static class BaseTypes
@@ -161,6 +166,9 @@ namespace nvm2
 		public const byte READFLT = 7;
 		public const byte PRINTB = 8;
 		public const byte READB = 9;
+		public const byte CLEAR = 10;
+		public const byte CHFGCOLOR = 11;
+		public const byte CHBGCOLOR = 12;
 
 		public void Run (vm machine)
 		{
@@ -181,11 +189,15 @@ namespace nvm2
 			} else if (machine.A == READINT) {
 				machine.AX = Convert.ToInt32 (Console.ReadLine ());
 			} else if (machine.A == READFLT) {
-				machine.EAX = (float)Convert.ToInt32(Console.ReadLine());
+				machine.EAX = (float)Convert.ToInt32 (Console.ReadLine ());
 			} else if (machine.A == PRINTB) {
-				Console.Write(machine.B);
+				Console.Write (machine.B);
 			} else if (machine.A == READB) {
-				machine.E = Convert.ToByte(Console.ReadLine());
+				machine.E = Convert.ToByte (Console.ReadLine ());
+			} else if (machine.A == CLEAR) {
+				Console.Clear ();
+			} else if (machine.A == CHFGCOLOR) {
+
 			}
 		}
 	}
@@ -468,6 +480,15 @@ namespace nvm2
 			case OpCodes.JNR:
 				JnR();
 				break;
+			case OpCodes.STRLEN:
+				StrLen();
+				break;
+			case OpCodes.STRCMP:
+				StrCmp();
+				break;
+			case OpCodes.STRSUB:
+				StrSub();
+				break;
 			default:
 				Nop();
 				break;
@@ -620,10 +641,36 @@ namespace nvm2
 				
 			case OpCodes.DMPPT:
 				return "DMPPT";
-				
+			
 			case OpCodes.DMPFL:
 				return "DMPFL";
-				
+			
+			case OpCodes.JE:
+				return "JE";
+			case OpCodes.JN:
+				return "JN";
+			case OpCodes.LT:
+				return "LT";
+			case OpCodes.LE:
+				return "LE";
+			case OpCodes.EQ:
+				return "EQ";
+			case OpCodes.NE:
+				return "NE";
+			case OpCodes.GE:
+				return "GE";
+			case OpCodes.GT:
+				return "GT";
+			case OpCodes.JER:
+				return "JER";
+			case OpCodes.JNR:
+				return "JNR";
+			case OpCodes.STRLEN:
+				return "STRLEN";
+			case OpCodes.STRCMP:
+				return "STRCMP";
+			case OpCodes.STRSUB:
+				return "STRSUB";
 
 			default:
 				return "";
@@ -678,17 +725,20 @@ namespace nvm2
 
 		public void LDREG(byte reg, byte val) {
 			switch (reg) {
-				case Registers.A:
-					machine.A = val;
-					break;
-				case Registers.B:
-					machine.B = val;
-					break;
-				case Registers.E:
-					machine.E = val;
-					break;
-				default:
-					throw new Exception("Invalid register for byte!");
+			case Registers.A:
+				machine.A = val;
+				break;
+			case Registers.B:
+				machine.B = val;
+				break;
+			case Registers.E:
+				machine.E = val;
+				break;
+			case Registers.CP:
+				machine.CP = (val > 0);
+				break;
+			default:
+				throw new Exception("Invalid register for byte!");
 			}
 		}
 
@@ -902,12 +952,13 @@ namespace nvm2
 		}
 		void ReadUI() {
 			uint val = machine.ram.ReadUInt(machine.pager.getVAT(machine.DA,machine.CR3));
-			machine.DA = val;
+			machine.DB = val;
 		}
 		void ReadF() {
 			float val = machine.ram.ReadFloat(machine.pager.getVAT(machine.DA,machine.CR3));
 			machine.EEX = val;
 		}
+
 		void WriteB() {
 			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.A);
 		}
@@ -915,7 +966,7 @@ namespace nvm2
 			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.AX);
 		}
 		void WriteUI() {
-			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.DA);
+			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.DB);
 		}
 		void WriteF() {
 			machine.ram.Write(machine.pager.getVAT(machine.DA,machine.CR3),machine.EAX);
@@ -1177,13 +1228,18 @@ namespace nvm2
 		void Je() {
 			if(machine.CP) {
 				machine.IP = NextUInt();
+			} else {
+				machine.IP += 4;
 			}
 		}
 
-		void Jn() {
-			if(!machine.CP) {
-				machine.IP = NextUInt();
-			}	
+		void Jn ()
+		{
+			if (!machine.CP) {
+				machine.IP = NextUInt ();
+			} else {
+				machine.IP += 4;
+			}
 		}
 
 		void Lt() {
@@ -1275,6 +1331,26 @@ namespace nvm2
 			if(!machine.CP) {
 				machine.IP = machine.DA;
 			}	
+		}
+		void StrLen ()
+		{
+			string str = machine.pager.PopString(machine.CR3);
+			machine.EX = str.Length;
+		}
+
+		void StrCmp ()
+		{
+			string a = machine.pager.PopString(machine.CR3);
+			string b = machine.pager.PopString(machine.CR3);
+			machine.CP = a == b;
+		}
+
+		void StrSub()
+		{
+			string a = machine.pager.PopString(machine.CR3);
+			int index = machine.AX;
+			int length = machine.BX;
+			machine.pager.Push(a.Substring(index,length),machine.CR3);
 		}
 	}
 }

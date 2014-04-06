@@ -1,14 +1,58 @@
+#-cd ../../testing -c -i os.nsm -cd disk0 -o os
+#OCDSM
+
+#init memory
 CALL [initmem]
+
+#print welcome msg
 LD DA [welcomemsg]
 CALL [prtstr]
+
+loopstart:
+#print terminal input
+LD DA [terminal]
+CALL [prtstr]
+
+#read command
+CALL [readstr]
+#get length, hacky, non destructive way
+CALL [strlen] #get length, stored in AX
+LD BX 4
+ADD INT
+MV AX EX #add size for strsize for cmd
+LD DA [cmds] #store length at cmds
+WRITEI
+MALLOC #malloc space for cmd
+MV DB DA #write address of allocated string at cmda
+LD DA [cmda]
+WRITEUI
+MV DA DB
+POPS #store string
+DMPFL
+
+#compare command
+CALL [cmpcommand]
+
+#Free cmd
+LD DA [cmds]
+READUI #read size
+MV AX EX
+LD DA [cmda]
+READUI
+MV DA DB
+FREE
+DMPFL
+JMP [loopstart]
+
 RET_PAGE
 
 initmem:
-LD DA 300
+LD DA 1024
 SET_PAGE_STACK
-LD DA 512
+LD DA 2048
 SET_PAGE_HEAP
 PAGE_INIT_MEM
+ALLOC_PAGE
 RET
 
 prtstr:
@@ -17,5 +61,66 @@ LD A 1
 INT 1
 RET
 
+readstr:
+LD A 5
+INT 1
+RET
+
+cmpcommand:
+
+#check for help command
+LD DA [cmda]
+READUI
+MV DA DB
+LODS
+LD DA [cmdhelp]
+LODS
+STRCMP
+JE [dohelp]
+LD CP 0
+
+#check for shutdown command
+LD DA [cmda]
+READUI
+MV DA DB
+LODS
+LD DA [cmdshutdown]
+LODS
+STRCMP
+JE [doshutdown]
+LD CP 0
+
+#unknown command
+LD DA [unknowncommand]
+CALL [prtstr]
+RET
+
+dohelp:
+LD DA [helpmsg]
+CALL [prtstr]
+RET
+
+doshutdown:
+LD DA [shutdownmsg]
+CALL [prtstr]
+HALT
+RET_PAGE
+RET
+
+strlen:
+POPI AX
+PUSHR AX
+RET
+
 #text data
-welcomemsg: DS "Welcome to nvm os!"
+welcomemsg: DS "Welcome to nvm os!\n"
+terminal: DS "nvm os>"
+cmdhelp: DS "help"
+cmdshutdown: DS "shutdown"
+
+shutdownmsg: DS "shutting down nvm os....\n"
+unknowncommand: DS "Unknown command, try help for a list of commands\n"
+helpmsg: DS "This is the nvm os help screen\ncommands are:\nhelp -- displays this screen\nshutdown -- shuts down the os\n"
+
+cmda: DUI 0
+cmds: DI 0

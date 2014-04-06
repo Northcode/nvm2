@@ -83,7 +83,7 @@ namespace nvm2
 			uint addr = entry.PTAddress;
 
 			//Read pages
-			for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
+			for (int i = 0; i < PAGE_TABLE_SIZE / 4; i++) {
 				uint frameAddr = ram.ReadUInt((uint)(addr + (i*4)));
 				int frameindex = (int)(frameAddr / Frame.FRAME_SIZE);
 				Frame frame = ram.getFrame(frameindex);
@@ -96,8 +96,8 @@ namespace nvm2
 			//Write page table
 			uint addr = entry.PTAddress; // Get page table address
 			// Write: Page addresses
-			for (int i = 0; i < PAGE_TABLE_SIZE; i++) {
-				ram.Write((uint)(addr + (i*4)), 0);
+			for (int i = 0; i < PAGE_TABLE_SIZE / 4; i++) {
+				ram.Write((uint)(addr + (i*4)), 0u);
 			}
 			//Write first page address start
 			ram.Write(addr,addr + PAGE_TABLE_SIZE + 4);
@@ -106,8 +106,9 @@ namespace nvm2
 		public uint GetPageDirectoryEntrySize(PageDirectoryEntry entry) {
 			uint addr = entry.PTAddress;
 			uint count = 0;
-			for(int i = 0; i < PAGE_TABLE_SIZE; i++) {
-				if(ram.ReadUInt((uint)(addr + i*4)) != 0) {
+			for(int i = 0; i < PAGE_TABLE_SIZE / 4; i++) {
+				uint a = ram.ReadUInt((uint)(addr + i*4));
+				if(a != 0) {
 					count++;
 				}
 			}
@@ -184,7 +185,6 @@ namespace nvm2
 			for(int i = 0; i < PageDirectory.Length; i++) {
 				if(PageDirectory[i].PTAddress == entry.PTAddress) {
 					freeFrame.PageTable = i;
-					Console.WriteLine(i);
 					break;
 				}
 			}
@@ -378,7 +378,8 @@ namespace nvm2
 			uint lastaddr = entry.free_pointer; //last free block pointer
 			bool isfirst = true;
 			//loop through freelist , check for large enough chunk
-			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry); ) {
+			uint pdsize = GetPageDirectoryEntrySize(entry);
+			for (uint addr = entry.free_pointer; addr < pdsize; ) {
 				uint nextblock = ram.ReadUInt(getVAT(addr, entry)); //read address of next free block
 				uint blocksize = ram.ReadUInt(getVAT(addr + 4, entry)); //read size of current free block
 				if (blocksize >= size) {
@@ -409,12 +410,12 @@ namespace nvm2
 
 		public void free(uint address,uint size, PageDirectoryEntry entry)
 		{
-			Console.WriteLine("freeing memory at address: " + address + " with size: " + size);
+			//Console.WriteLine("freeing memory at address: " + address + " with size: " + size);
 			uint lastaddr = entry.free_pointer;
-			//bool isfirst = true;
+			bool isfirst = true;
 			//check if block we are freeing is before the first in the freelist
 			if (address < lastaddr) {
-				Console.WriteLine("Address is less than " + lastaddr);
+				//Console.WriteLine("Address is less than " + lastaddr);
 				if(address + 8 < lastaddr) {
 					entry.free_pointer = address; //set first freelist pointer to be this block
 					ram.Write(getVAT(address,entry),lastaddr); //write previous freelist pointer as the next one
@@ -422,12 +423,13 @@ namespace nvm2
 					MergeFreeBlocks(entry);
 					return; //job done!
 				} else { //merge these blocks because they collide otherwise
-					Console.WriteLine("Free blocks adjecent, merging...");
+					//Console.WriteLine("Free blocks adjecent, merging...");
 					uint nextaddr = ram.ReadUInt(getVAT(lastaddr,entry)); //get the address of the next block
 					uint lastsize = ram.ReadUInt(getVAT(lastaddr + 4,entry)); //read size of previous first block
 					ram.Write(getVAT(address,entry),nextaddr); //write address of next block
 					uint newsize = size + lastsize;
-					ram.Write(getVAT(address,entry),newsize); //write new size of merged freeblock
+					ram.Write(getVAT(address + 4,entry),newsize); //write new size of merged freeblock
+					entry.free_pointer = address;
 					MergeFreeBlocks(entry);
 					return; //done!
 				}
@@ -435,10 +437,11 @@ namespace nvm2
 			//if not this is the first one, complicated shit needs to happen:
 			uint finaladdr = entry.free_pointer;
 			//loop through freelist to find where we need to put the pointers
-			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry);) {
+			uint pdsize = GetPageDirectoryEntrySize(entry);
+			for (uint addr = entry.free_pointer; addr < pdsize;) {
 				uint nextblock = ram.ReadUInt(getVAT(addr, entry)); //read address of next free block
 				if (address < nextblock && address > addr) { //block is between current and next block
-					Console.WriteLine("address between " + lastaddr + " and " + nextblock);
+					//Console.WriteLine("address between " + lastaddr + " and " + nextblock);
 					if(address + 8 < nextblock) {
 						ram.Write(getVAT(addr,entry), address); //write new pointer to current block
 						ram.Write(getVAT(address,entry), nextblock); //write pointer to next block
@@ -446,7 +449,7 @@ namespace nvm2
 						MergeFreeBlocks(entry);
 						return; //done!
 					} else { //need to merge again...
-						Console.WriteLine("Free blocks adjecent, merging...");
+						//Console.WriteLine("Free blocks adjecent, merging...");
 						uint nextsize = ram.ReadUInt(getVAT(nextblock + 4,entry)); //read size of next block
 						uint dablockafter = ram.ReadUInt(getVAT(nextblock,entry)); //read address of block after next block
 						uint newsize = size + nextsize;
@@ -478,7 +481,8 @@ namespace nvm2
 		}
 
 		public void MergeFreeBlocks(PageDirectoryEntry entry) {
-			for (uint addr = entry.free_pointer; addr < GetPageDirectoryEntrySize(entry);) {
+			uint pdsize = GetPageDirectoryEntrySize(entry);
+			for (uint addr = entry.free_pointer; addr < pdsize;) {
 				uint nextblock = ram.ReadUInt(getVAT(addr, entry)); //read address of next free block
 				if(nextblock == 0) {
 					break; //end of list

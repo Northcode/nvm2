@@ -1,24 +1,29 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2/testing/bios.txt">
+  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2/virtual-machine/devices/CPU.cs">
     <Files>
-      <File FileName="nvm2/virtual-machine/Pager.cs" Line="576" Column="10" />
-      <File FileName="nvm2/virtual-machine/devices/Memory.cs" Line="106" Column="40" />
+      <File FileName="nvm2/virtual-machine/Pager.cs" Line="530" Column="1" />
+      <File FileName="nvm2/virtual-machine/devices/Memory.cs" Line="106" Column="13" />
       <File FileName="nvm2/Main.cs" Line="57" Column="4" />
       <File FileName="nvm2/virtual-machine/vm.cs" Line="113" Column="1" />
       <File FileName="nvm2/virtual-machine/CallStack.cs" Line="18" Column="37" />
-      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="60" Column="40" />
+      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="1128" Column="26" />
       <File FileName="nvm2/test-code/hello world.nsm" Line="1" Column="10" />
-      <File FileName="nvm2/testing/bios.txt" Line="34" Column="6" />
+      <File FileName="nvm2/testing/bios.txt" Line="3" Column="15" />
+      <File FileName="nvm2/testing/os.nsm" Line="90" Column="1" />
+      <File FileName="nvm2/Assembler/Assembler.cs" Line="309" Column="48" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
-          <Node name="nvm2" expanded="True" selected="True">
+          <Node name="nvm2" expanded="True">
+            <Node name="Assembler" expanded="True" />
             <Node name="test-code" expanded="True" />
             <Node name="testing" expanded="True" />
             <Node name="virtual-machine" expanded="True">
-              <Node name="devices" expanded="True" />
+              <Node name="devices" expanded="True">
+                <Node name="CPU.cs" selected="True" />
+              </Node>
             </Node>
           </Node>
         </State>
@@ -29,7 +34,9 @@
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="/home/andreas/git/nvm2/nvm2/virtual-machine/devices/CPU.cs" line="1128" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.ItemProperties.nvm2>

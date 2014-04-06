@@ -46,22 +46,22 @@ namespace nvm2
 
 		public void ChangeDirectory (string dir)
 		{
-			if(Directory.Exists(Path.Combine(mapped_path,dir))) {
+			if(Directory.Exists(Path.Combine(GetWorkingDirectory(),dir))) {
 				working_dir = dir;
 			}
 		}
 
 		public bool DirectoryExists(string name) {
-			return Directory.Exists(Path.Combine(mapped_path,name));
+			return Directory.Exists(Path.Combine(GetWorkingDirectory(),name));
 		}
 
 		public bool FileExists(string name) {
-			return File.Exists(Path.Combine(mapped_path,name));
+			return File.Exists(Path.Combine(GetWorkingDirectory(),name));
 		}
 
 		public void OpenFile (string file)
 		{
-			stream = File.Open(file,FileMode.Open);
+			stream = File.Open(Path.Combine(GetWorkingDirectory(),file),FileMode.Open);
 		}
 
 		public void CloseFile() {

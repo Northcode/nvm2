@@ -189,6 +189,7 @@ namespace nvm2
                 case "EBX": return Registers.EBX;
                 case "EEX": return Registers.EEX;
                 case "IP": return Registers.IP;
+				case "CP": return Registers.CP;
                 default: return 255;
             }
         }
@@ -206,7 +207,7 @@ namespace nvm2
                         string register = tokens[i].value as string;
                         byte regB = register_to_byte(register);
                         i++;
-                        if (register == "A" || register == "B" || register == "E") {
+                        if (register == "A" || register == "B" || register == "E" || register == "CP") {
                             program.Add(BaseTypes.BYTE);
                             program.Add(regB);
                             AssembleByte();
@@ -281,19 +282,31 @@ namespace nvm2
                     } else if (tokens[i].value as string == "PUSHUI") {
 						program.Add(OpCodes.PUSHUI); i++;
 						AssembleUInt();
+                    } else if (tokens[i].value as string == "PUSHF") {
+						program.Add(OpCodes.PUSHF); i++;
+						AssembleFloat();
                     } else if (tokens[i].value as string == "PUSHR") {
 						program.Add(OpCodes.PUSHR); i++;
-						AssembleFloat();
+						string register = tokens[i].value as string;
+						program.Add (register_to_byte(register));
                     } else if (tokens[i].value as string == "LODS") {
                         program.Add(OpCodes.LODS);
 					} else if (tokens[i].value as string == "POPB") {
-                        program.Add(OpCodes.POPB);
+                        program.Add(OpCodes.POPB); i++;
+						string register = tokens[i].value as string;
+						program.Add (register_to_byte(register));
                     } else if (tokens[i].value as string == "POPI") {
-                        program.Add(OpCodes.POPI);
+                        program.Add(OpCodes.POPI); i++;
+						string register = tokens[i].value as string;
+						program.Add (register_to_byte(register));
                     } else if (tokens[i].value as string == "POPUI") {
-                        program.Add(OpCodes.POPUI);
+                        program.Add(OpCodes.POPUI); i++;
+						string register = tokens[i].value as string;
+						program.Add (register_to_byte(register));
                     } else if (tokens[i].value as string == "POPF") {
-                        program.Add(OpCodes.POPF);
+                        program.Add(OpCodes.POPF); i++;
+						string register = tokens[i].value as string;
+						program.Add (register_to_byte(register));
                     } else if (tokens[i].value as string == "POPS") {
                         program.Add(OpCodes.POPS);
                     } else if (tokens[i].value as string == "READB") {
@@ -411,6 +424,12 @@ namespace nvm2
                         program.Add(OpCodes.JER);
                     } else if (tokens[i].value as string == "JNR") {
                         program.Add(OpCodes.JNR);
+					} else if (tokens[i].value as string == "STRCMP") {
+                        program.Add(OpCodes.STRCMP);
+                    } else if (tokens[i].value as string == "STRLEN") {
+                        program.Add(OpCodes.STRLEN);
+                    } else if (tokens[i].value as string == "STRSUB") {
+                        program.Add(OpCodes.STRSUB);
                     }
 
 					else if (tokens[i + 1].type == Token.SYMBOL && (char)tokens[i + 1].value == ':') {
