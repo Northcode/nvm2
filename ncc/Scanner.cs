@@ -266,6 +266,10 @@ namespace ncc
                 {
 					//nop
                 }
+				else if (code[i] == '(') { tokens.Add(new Token() { type = Token.OPENPARAN, value = code[i] }); }
+				else if (code[i] == ')') { tokens.Add(new Token() { type = Token.CLOSEPARAN, value = code[i] }); }
+				else if (code[i] == '{') { tokens.Add(new Token() { type = Token.OPENBLOCK, value = code[i] }); }
+				else if (code[i] == '}') { tokens.Add(new Token() { type = Token.CLOSEBLOCK, value = code[i] }); }
                 else
                 {
                     tokens.Add(new Token() { type = Token.SYMBOL, value = code[i] });

@@ -38,6 +38,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Scanner.cs" />
     <Compile Include="AST.cs" />
+    <Compile Include="Parser.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -50,6 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="samples\stdio.inc" />
-    <None Include="samples\helloworld.nc" />
+    <None Include="samples\helloworld.c" />
   </ItemGroup>
 </Project>
