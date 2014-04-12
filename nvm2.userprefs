@@ -1,6 +1,6 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2/virtual-machine/devices/CPU.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="ncc/Scanner.cs">
     <Files>
       <File FileName="nvm2/virtual-machine/Pager.cs" Line="530" Column="1" />
       <File FileName="nvm2/virtual-machine/devices/Memory.cs" Line="106" Column="13" />
@@ -12,18 +12,19 @@
       <File FileName="nvm2/testing/bios.txt" Line="3" Column="15" />
       <File FileName="nvm2/testing/os.nsm" Line="90" Column="1" />
       <File FileName="nvm2/Assembler/Assembler.cs" Line="309" Column="48" />
+      <File FileName="ncc/Scanner.cs" Line="40" Column="4" />
+      <File FileName="ncc/Main.cs" Line="16" Column="30" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
-        <State expanded="True">
+        <State expanded="True" selected="True">
+          <Node name="ncc" expanded="True" />
           <Node name="nvm2" expanded="True">
             <Node name="Assembler" expanded="True" />
             <Node name="test-code" expanded="True" />
             <Node name="testing" expanded="True" />
             <Node name="virtual-machine" expanded="True">
-              <Node name="devices" expanded="True">
-                <Node name="CPU.cs" selected="True" />
-              </Node>
+              <Node name="devices" expanded="True" />
             </Node>
           </Node>
         </State>

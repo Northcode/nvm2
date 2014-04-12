@@ -21,6 +21,6 @@ Global
 		{B40B2FF5-EB87-4630-97D0-EE471BF7C213}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = nvm2\nvm2.csproj
+		StartupItem = ncc\ncc.csproj
 	EndGlobalSection
 EndGlobal

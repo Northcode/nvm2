@@ -1,4 +1,4 @@
-#include "stdio.inc"
+#include <stdio.inc>
 
 int main()
 {

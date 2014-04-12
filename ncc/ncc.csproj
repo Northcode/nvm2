@@ -49,6 +49,7 @@
     <Folder Include="samples\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="samples\stdio.inc" />
     <None Include="samples\helloworld.nc" />
   </ItemGroup>
 </Project>

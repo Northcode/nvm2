@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
+using System.IO;
 
 namespace ncc
 {
-	class Token
+	public class Token
 	{
 		public const byte WORD = 0;
 		public const byte BYTE_LIT = 1;
@@ -14,21 +16,38 @@ namespace ncc
 		public const byte SYMBOL = 6;
 		public const byte BOOL_LIT = 7;
         public const byte CHAR_LIT = 8;
+		public const byte TYPE = 9;
+		public const byte OPENPARAN = 10;
+		public const byte CLOSEPARAN = 11;
+		public const byte OPENBLOCK = 12;
+		public const byte CLOSEBLOCK = 13;
+		public const byte KEYWORD = 14;
 
 		public object value;
 		public byte type;
+
+		public override string ToString ()
+		{
+			return string.Format ("[Token] {0} : {1} ",type,value);
+		}
 	}
 
 	public class Scanner
 	{
-		string code;
 		List<Token> tokens = new List<Token>();
+
+		List<string> includedfiles = new List<string>();
 
 		public Scanner ()
 		{
 		}
 
-		public void Scan()
+		public List<Token> getTokens ()
+		{
+			return tokens;
+		}
+
+		public void Scan(string code)
         {
             tokens = new List<Token>();
             int i = 0;
@@ -74,8 +93,29 @@ namespace ncc
                     }
                 }
 				else if (code[i] == '#') {
+					string preprocessorline = "";
+					StringBuilder sb = new StringBuilder();
 					while(code[i] != '\n') {
+						sb.Append(code[i]);
 						i++;
+					}
+					preprocessorline = sb.ToString();
+					if (preprocessorline.StartsWith("#include ")) {
+						if (preprocessorline.Contains("<")) {
+							string file = preprocessorline.Substring(preprocessorline.IndexOf('<') + 1,preprocessorline.LastIndexOf('>') - preprocessorline.IndexOf('<') - 1);
+							if(!includedfiles.Contains(file)) {
+								includedfiles.Add(file);
+								string Code = File.ReadAllText(file);
+								Scan (Code);
+							}
+						} else if (preprocessorline.Contains("\"")) {
+							string file = preprocessorline.Substring(preprocessorline.IndexOf('"') + 1,preprocessorline.LastIndexOf('"') - preprocessorline.IndexOf('"') - 1);
+							if(!includedfiles.Contains(file)) {
+								includedfiles.Add(file);
+								string Code = File.ReadAllText(file);
+								Scan (Code);
+							}
+						}
 					}
 				}
                 else if (char.IsLetter(code[i]) || code[i] == '_')
@@ -86,14 +126,84 @@ namespace ncc
                         strb.Append(code[i]);
                         i++;
                     }
-                    if (strb.ToString() == "true")
+					string word = strb.ToString();
+                    if (word == "true")
                     {
                         tokens.Add(new Token() { type = Token.BOOL_LIT, value = true });
                     }
-                    else if (strb.ToString() == "false")
+                    else if (word == "false")
                     {
                         tokens.Add(new Token() { type = Token.BYTE_LIT, value = false });
                     }
+					else if (word == "if") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "elseif") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "else") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "for") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "while") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "switch") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "case") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "default") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "const") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "continue") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "do") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "enum") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "goto") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "register") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "return") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "sizeof") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "static") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "struct") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "typedef") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "union") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "volatile") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "auto") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
+					else if (word == "break") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
                     else
                     {
                         tokens.Add(new Token() { type = Token.WORD, value = strb.ToString() });

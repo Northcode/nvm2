@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace ncc
 {
@@ -6,7 +7,14 @@ namespace ncc
 	{
 		public static void Main (string[] args)
 		{
-			Console.WriteLine ("Hello World!");
+			Scanner scanner = new Scanner();
+
+			Directory.SetCurrentDirectory("../../samples");
+			scanner.Scan(File.ReadAllText("helloworld.nc"));
+
+			foreach (var token in scanner.getTokens()) {
+				Console.WriteLine(token);
+			}
 		}
 	}
 }
