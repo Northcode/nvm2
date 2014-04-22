@@ -204,6 +204,9 @@ namespace ncc
 					else if (word == "break") {
 						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
 					}
+					else if (word == "asm") {
+						tokens.Add (new Token() { type = Token.KEYWORD, value = word });
+					}
                     else
                     {
                         tokens.Add(new Token() { type = Token.WORD, value = strb.ToString() });
@@ -263,6 +266,10 @@ namespace ncc
 					//nop
                 }
                 else if (code[i] == '\r')
+                {
+					//nop
+                }
+				else if (code[i] == ';')
                 {
 					//nop
                 }

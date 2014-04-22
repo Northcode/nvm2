@@ -39,6 +39,7 @@
     <Compile Include="Scanner.cs" />
     <Compile Include="AST.cs" />
     <Compile Include="Parser.cs" />
+    <Compile Include="CodeGenerator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
