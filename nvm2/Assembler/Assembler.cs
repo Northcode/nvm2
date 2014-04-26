@@ -28,7 +28,7 @@ namespace nvm2
         int i = 0;
 
         Dictionary<string,uint> symbolTable = new Dictionary<string,uint>();
-        List<Tuple<int,string>> callTable = new List<Tuple<int,string>>();
+        List<Tuple<int,string,uint>> callTable = new List<Tuple<int,string,uint>>();
 
 		public Assembler (string Code)
 		{
@@ -510,12 +510,20 @@ namespace nvm2
             } else if (tokens[i].type == Token.SYMBOL && (char)tokens[i].value == '[') {
                 i++;
                 string name = tokens[i].value as string;
+				i++;
+				i++;
+				uint offset = 0;
+				if(tokens[i].type == Token.SYMBOL && ((char)tokens[i].value) == '+') {
+					i++;
+					offset = (uint)(int)tokens[i].value;
+				}
                 if(symbolTable.ContainsKey(name)) {
-                    program.AddRange(BitConverter.GetBytes(symbolTable[name]));
+                    program.AddRange(BitConverter.GetBytes(symbolTable[name] + offset));
                 } else {
-                    callTable.Add(new Tuple<int,string>(program.Count,name));
+                    callTable.Add(new Tuple<int,string,uint>(program.Count,name,offset));
                     program.AddRange(new byte[] { 0,0,0,0 });
                 }
+
             } else {
                 throw new Exception("Unexpected token, expected uint, got: " + tokens[i].type);
             }
@@ -550,9 +558,9 @@ namespace nvm2
         }
 
         public void InsertCalls() {
-            foreach(Tuple<int,string> key in callTable) {
+            foreach(Tuple<int,string,uint> key in callTable) {
                 if(symbolTable.ContainsKey(key.Item2)) {
-                    byte[] address = BitConverter.GetBytes(symbolTable[key.Item2]);
+                    byte[] address = BitConverter.GetBytes(symbolTable[key.Item2] + key.Item3);
                     program[key.Item1 + 0] = address[0];
                     program[key.Item1 + 1] = address[1];
                     program[key.Item1 + 2] = address[2];

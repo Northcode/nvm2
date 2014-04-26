@@ -72,5 +72,6 @@
     <None Include="testing\bios.txt" />
     <None Include="testing\helloworld.txt" />
     <None Include="testing\os.nsm" />
+    <None Include="testing\helloworld.asm" />
   </ItemGroup>
 </Project>
