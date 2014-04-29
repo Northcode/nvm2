@@ -1,19 +1,29 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2pp/ram.hpp">
+  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2pp/nsm_def.txt">
     <Files>
+      <File FileName="nvm2pp/nsm_def.txt" Line="12" Column="17" />
+      <File FileName="nvm2pp/vm.hpp" Line="20" Column="14" />
+      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="21" Column="31" />
       <File FileName="nvm2pp/main.cpp" Line="1" Column="1" />
-      <File FileName="nvm2pp/ram.hpp" Line="7" Column="34" />
-      <File FileName="nvm2pp/vm.hpp" Line="1" Column="1" />
+      <File FileName="nvm2pp/ram.hpp" Line="21" Column="16" />
+      <File FileName="nvm2pp/device.hpp" Line="5" Column="2" />
+      <File FileName="nvm2/virtual-machine/VMDevice.cs" Line="1" Column="1" />
+      <File FileName="nvm2pp/devices/cpu.hpp" Line="5" Column="2" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="ncc" expanded="True" />
           <Node name="nvm2" expanded="True">
-            <Node name="virtual-machine" expanded="True" />
+            <Node name="virtual-machine" expanded="True">
+              <Node name="devices" expanded="True" />
+            </Node>
           </Node>
-          <Node name="nvm2pp" expanded="True" selected="True" />
+          <Node name="nvm2pp" expanded="True">
+            <Node name="devices" expanded="True" />
+            <Node name="nsm_def.txt" selected="True" />
+          </Node>
         </State>
       </Pad>
       <Pad Id="ClassPad">
