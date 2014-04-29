@@ -1,299 +1,329 @@
 using System;
-using System.Collections.Generic;
 using ncc.AST;
+using System.Collections.Generic;
 
 namespace ncc
 {
-	public class Scope
+	[Serializable]
+	public class ParseException : Exception
 	{
-		public string scopename;
-		public Scope Parent { get; private set; }
-
-		public Scope (string ScopeStr, Scope parent)
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:ParseException"/> class
+		/// </summary>
+		public ParseException ()
 		{
-			scopename = ScopeStr;
-			Parent = parent;
 		}
-
-		public Scope SubScope (string name)
+		
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:ParseException"/> class
+		/// </summary>
+		/// <param name="message">A <see cref="T:System.String"/> that describes the exception. </param>
+		public ParseException (string message) : base (message)
 		{
-			return new Scope(name, this);
 		}
-
-		public string GetFullName ()
+		
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:ParseException"/> class
+		/// </summary>
+		/// <param name="message">A <see cref="T:System.String"/> that describes the exception. </param>
+		/// <param name="inner">The exception that is the cause of the current exception. </param>
+		public ParseException (string message, Exception inner) : base (message, inner)
 		{
-			if (Parent != null) {
-				return Parent.GetFullName () + "_" + scopename;
-			} else {
-				return scopename;
-			}
 		}
-
+		
+		/// <summary>
+		/// Initializes a new instance of the <see cref="T:ParseException"/> class
+		/// </summary>
+		/// <param name="context">The contextual information about the source or destination.</param>
+		/// <param name="info">The object that holds the serialized object data.</param>
+		protected ParseException (System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) : base (info, context)
+		{
+		}
 	}
 
-	public class SymbolTableEntry
+	public class TypeTable
 	{
-		public string name;
-		public TypeDef type;
-		public Scope scope;
-		public bool isfunc;
+		List<type> typeDefs;
 
-		public string GetFullName() {
-			return "{0}_{1}".f (scope.GetFullName(),name);
+		public TypeTable()
+		{
+			typeDefs = new List<type> ();
+		}
+
+		public bool IsType(string name) {
+			return typeDefs.Exists(p => p.Name == name);
+		}
+
+		public type get(string name) {
+			return typeDefs.Find (p => p.Name == name);
+		}
+
+		public void AddType(type t) {
+			typeDefs.Add (t);
 		}
 	}
 
-	public class TypeDef
+	public class SymbolTable
 	{
-		public string name;
-		public string value;
+		List<symbol> symbolTable;
 
-		public string GetDefine ()
+		public SymbolTable()
 		{
-			switch (value) {
-			case "int":
-				return "DI";
-			case "uint":
-				return "DUI";
-			case "float":
-				return "DF";
-			case "string":
-				return "DS";
-			case null:
-				return "";
-			default:
-				throw new Exception("Unknown typedef: {0}".f (value));
-				break;
-			}
-		}		
+			symbolTable = new List<symbol> ();
+		}
 
-		public string Blank ()
-		{
-			switch (value) {
-			case "int":
-				return "0";
-			case "uint":
-				return "0";
-			case "float":
-				return "0.0";
-			case "string":
-				return "\"\"";
-			default:
-				throw new Exception("Unknown typedef: {0}".f (value));
-				break;
-			}
+		public bool IsSymbol(string name) {
+			return symbolTable.Exists(p => p.Name == name);
+		}
+
+		public symbol get(string name) {
+			return symbolTable.Find (p => p.Name == name);
+		}
+
+		public void Add(symbol Symbol) {
+			symbolTable.Add (Symbol);
 		}
 	}
 
 	public class Parser
 	{
-		public List<TypeDef> typeTable;
-		public List<SymbolTableEntry> symbolTable;
-
 		Token[] tokens;
+		int index;
 
-		int i;
+		TypeTable typeTable;
+		SymbolTable symbolTable;
+
+		public Token CurrentToken
+		{
+			get {
+				return tokens [index];
+			}
+		}
+
+		public Token NextToken {
+			get {
+				if (index + 1 < tokens.Length)
+					return tokens [index + 1];
+				else
+					return CurrentToken;
+			}
+		}
+
+		public bool EOF
+		{
+			get {
+				return index >= tokens.Length - 1;
+			}
+		}
+
+		public void Next()
+		{
+			if (index + 1 < tokens.Length)
+				index++;
+		}
 
 		public Parser (Token[] Tokens)
 		{
 			tokens = Tokens;
-			i = 0;
-			typeTable = new List<TypeDef>();
-			typeTable.Add(new TypeDef() { name = "void", value = null });
-			typeTable.Add(new TypeDef() { name = "int", value = "int" });
-			typeTable.Add(new TypeDef() { name = "uint", value = "uint" });
-			typeTable.Add(new TypeDef() { name = "byte", value = "char" });
-			typeTable.Add(new TypeDef() { name = "char", value = "char" });
-			typeTable.Add(new TypeDef() { name = "float", value = "float" });
-			typeTable.Add(new TypeDef() { name = "string", value = "string" });
-
-			symbolTable = new List<SymbolTableEntry>();
+			index = 0;
+			symbolTable = new SymbolTable();
+			typeTable = new TypeTable ();
+			typeTable.AddType (new type () { Name = "void", Value = "void" });
+			typeTable.AddType (new type () { Name = "int", Value = "int" });
+			typeTable.AddType (new type () { Name = "float", Value = "float" });
+			typeTable.AddType (new type () { Name = "bool", Value = "bool" });
+			typeTable.AddType (new type () { Name = "char", Value = "char" });
+			typeTable.AddType (new type () { Name = "string", Value = "string" });
 		}
 
-		public STMT[] Parse ()
+		public stmt[] Parse()
 		{
-			List<STMT> body = new List<STMT> ();
-			Scope rootscope = new Scope("",null);
-			while (i < tokens.Length) {
-				body.Add(ParseStmt(rootscope));
-			}
-			return body.ToArray();
+			List<stmt> Stmts = new List<stmt> ();
+			while (!EOF)
+				Stmts.Add (ParseStmt ());
+			return Stmts.ToArray ();
 		}
 
-		public STMT ParseStmt (Scope currentscope)
+		public stmt ParseStmt()
 		{
-			try {
-				if (tokens [i].type == Token.KEYWORD) {
-					if (tokens [i].value as String == "if") {
-						throw new NotImplementedException();
-					} else if (tokens[i].value as String == "asm") {
-						ASM_CALL call = new ASM_CALL();
-						i++;
-						if(tokens[i].type != Token.STRING_LIT) {
-							throw new Exception("Expected string after asm keyword, got: " + tokens[i].ToString());
-						}
-						string asm = tokens[i].value as String;
-						call.asm = asm;
-						i++;
-						return call;
-					} else if (tokens[i].value as String == "return") {
-						throw new NotImplementedException();
-					} else {
-						throw new Exception(String.Format("Unexpected keyword: {0}",tokens[i].ToString()));
-					}
-				} else if (tokens [i].type == Token.WORD) {
-					return ParseWord (currentscope);
-				} else if (tokens[i].type == Token.OPENBLOCK) {
-					BLOCK b = new BLOCK();
-					List<STMT> statements = new List<STMT>();
-					i++;
-					while(tokens[i].type != Token.CLOSEBLOCK) {
-						statements.Add(ParseStmt(currentscope));
-					}
-					b.statements = statements.ToArray(); i++;
-					return b;
-				} else {
-					throw new Exception(String.Format("Unexpected token: {0}",tokens[i].ToString()));
-				}
-			} catch (IndexOutOfRangeException) {
-				Console.WriteLine("Unexpected EOF");
+			switch (CurrentToken.Type) {
+			case TokenType.word:
+				return ParseWord ();
+			default:
 				return null;
 			}
 		}
 
-		public EXPR ParseExpr ()
+		public block ParseBlock()
 		{
-			EXPR e = null;
+			List<stmt> block = new List<stmt> ();
+			while (!(CurrentToken.Type == TokenType.word && (CurrentToken.Value as string).Equals("end")))
+				block.Add (ParseStmt ());
+			Next ();
+			return new block () { list = block.ToArray() };
+		}
 
-			if (tokens [i].type == Token.INT_LIT) {
-				e = new INT_LIT () { value = (int)tokens[i].value }; i++;
-			} else if (tokens [i].type == Token.CHAR_LIT) {
-				e = new CHAR_LIT () { value = (char)tokens[i].value }; i++;
-			} else if (tokens [i].type == Token.STRING_LIT) {
-				e = new STRING_LIT () { value = tokens[i].value as String }; i++;
-			} else if (tokens [i].type == Token.BOOL_LIT) {
-				e = new BOOL_LIT () { value = (bool)tokens[i].value }; i++;
+		public stmt ParseWord()
+		{
+			string word = CurrentToken.Value as string;
+			if (typeTable.IsType (word)) {
+				type Type = typeTable.get (word);
+				Next ();
+				if (CurrentToken.Type == TokenType.star) {
+					Next ();
+					string name = CurrentToken.Value as string;
+					symbol sym = new symbol () { Name = name, Type = Type, isPointer = true };
+					Next ();
+					Next ();
+					assign_pointer a = new assign_pointer ();
+					a.Name = sym;
+					a.Value = ParseExpr ();
+					symbolTable.Add (sym);
+					return a;
+				} else if (CurrentToken.Type == TokenType.word) {
+					string Name = CurrentToken.Value as string;
+					symbol sym = new symbol () { Type = Type, Name = Name };
+					Next ();
+					if (CurrentToken.Type == TokenType.openparan) {
+						function_definition fdef = new function_definition ();
+						fdef.Symbol = sym;
+						Next ();
+						fdef.Args = ParseArgs ();
+						Next ();
+						fdef.Body = ParseBlock ();
+						sym.isFunc = true;
+						symbolTable.Add (sym);
+						return fdef;
+					} else if (CurrentToken.Type == TokenType.symbol && ((char)CurrentToken.Value).Equals ('=')) {
+						Next ();
+						assign a = new assign ();
+						a.Name = sym;
+						a.Value = ParseExpr ();
+						symbolTable.Add (sym);
+						return a;
+					}
+				}
+			} else if (symbolTable.IsSymbol (word)) {
+				symbol sym = symbolTable.get (word);
+				Next ();
+				if (CurrentToken.Type == TokenType.symbol && ((char)CurrentToken.Value).Equals('=')) {
+					Next ();
+					assign a = new assign ();
+					a.Name = sym;
+					a.Value = ParseExpr ();
+					return a;
+				}
+			} else if (word.Equals ("ret")) {
+				Next ();
+				ret r = new ret ();
+				r.Value = ParseExpr ();
+				return r;
 			}
+			throw new ParseException ("Unknown word: " + CurrentToken.ToString());
+		}
+
+		public args ParseArgs()
+		{
+			List<symbol> symbols = new List<symbol>();
+			while (CurrentToken.Type != TokenType.closeparan) {
+				if (CurrentToken.Type == TokenType.comma)
+					Next ();
+				symbol s = new symbol ();
+				string typename = CurrentToken.Value as string;
+				if (typeTable.IsType (typename)) 
+					s.Type = typeTable.get (typename); 
+				else throw new Exception (typename + " is not a type");
+				Next ();
+				s.Name = CurrentToken.Value as string;
+				Next ();
+				symbols.Add (s);
+			}
+			args Args = new args () { symbols = symbols.ToArray() };
+			return Args;
+		}
+
+		public expr ParseExpr(bool isFactor = false)
+		{
+			expr e = null;
+
+			if (CurrentToken.Type == TokenType.intl)
+				e = new intl () { value = (int)CurrentToken.Value };
+			else if (CurrentToken.Type == TokenType.decimall)
+				e = new decimall () { value = (double)CurrentToken.Value };
+			else if (CurrentToken.Type == TokenType.charl)
+				e = new charl () { value = (char)CurrentToken.Value };
+			else if (CurrentToken.Type == TokenType.stringl)
+				e = new stringl () { value = CurrentToken.Value as string };
+			else if (CurrentToken.Type == TokenType.word) {
+				if (symbolTable.IsSymbol (CurrentToken.Value as string)) {
+					symbol s = symbolTable.get (CurrentToken.Value as string);
+					if (NextToken.Type == TokenType.openparan) {
+						Next ();
+						Next ();
+						expr Args = ParseExpr ();
+						Next ();
+						function_call fc = new function_call ();
+						fc.Argument = Args;
+						fc.Name = s;
+						e = fc;
+					} else {
+						getVar g = new getVar () { Symbol = s };
+						e = g;
+					}
+				}
+			} else if (CurrentToken.Type == TokenType.star) {
+				Next ();
+				string name = CurrentToken.Value as string;
+				if (symbolTable.IsSymbol (name)) {
+					symbol s = symbolTable.get (name);
+					deref_pointer dp = new deref_pointer ();
+					dp.Symbol = s;
+					e = dp;
+				} else
+					throw new ParseException ("Unknown symbol: " + name);
+			} else if (CurrentToken.Type == TokenType.and) {
+				Next ();
+				string name = CurrentToken.Value as string;
+				if (symbolTable.IsSymbol (name)) {
+					symbol s = symbolTable.get (name);
+					get_address dp = new get_address ();
+					dp.Symbol = s;
+					e = dp;
+				} else
+					throw new ParseException ("Unknown symbol: " + name);
+			}
+			else
+				throw new ParseException ("Unknown expression: " + CurrentToken.ToString ());
+
+			Next ();
+
+			if (CurrentToken.Type == TokenType.star || CurrentToken.Type == TokenType.divide) {
+				factor f = new factor ();
+				f.Term1 = e;
+				f.Op = (CurrentToken.Type == TokenType.star ? op.mul : op.div);
+				Next ();
+				f.Term2 = ParseExpr (true);
+				e = f;
+			}
+
+			if ((CurrentToken.Type == TokenType.plus || CurrentToken.Type == TokenType.minus) && !isFactor) {
+				arith a = new arith ();
+				a.Factor1 = e;
+				a.Op = (CurrentToken.Type == TokenType.plus ? op.plus : op.minus);
+				Next ();
+				a.Factor2 = ParseExpr ();
+				e = a;
+			}
+
+			if (CurrentToken.Type == TokenType.comma) {
+				expr_list l = new expr_list ();
+				l.first = e;
+				Next ();
+				l.last = ParseExpr ();
+				e = l;
+			}
+
 			return e;
-		}
-
-		FunctionArg[] ParseFuncArgs (Scope currentscope)
-		{
-			if (tokens [i].type == Token.OPENPARAN) {
-				List<FunctionArg> args = new List<FunctionArg>();
-				i++;
-				while(tokens[i].type != Token.CLOSEPARAN) {
-					if(IsType(tokens[i].value as String)) {
-						TypeDef type = getType(tokens[i].value as String); i++;
-						if(tokens[i].type != Token.WORD) {
-							throw new Exception("Expected word, got: " + tokens[i].ToString());
-						}
-						string argname = tokens[i].value as String; i++;
-						SymbolTableEntry argSymbol = new SymbolTableEntry() { name = argname, type = type, isfunc = false, scope = currentscope };
-						symbolTable.Add(argSymbol);
-						args.Add(new FunctionArg() { symbol = argSymbol, type = type });
-						if(!(tokens[i].type == Token.SYMBOL && (char)tokens[i].value == ',')) {
-							break;
-						} else { i++; }
-					} else {
-						throw new Exception("Unknown type: " + tokens[i].value as String);
-					}
-				}
-				return args.ToArray();
-			} else {
-				throw new Exception ("Expected open paran after in function definition, got: " + tokens[i].ToString());
-			}
-		}	
-
-		STMT ParseWord (Scope currentscope)
-		{
-			if (typeTable.Count > 0 && typeTable.Exists (p => p.name == tokens [i].value as string)) {
-				//check if the current token is a type
-				TypeDef type = typeTable.Find (t => t.name == tokens [i].value as String);
-				i++;
-				if (tokens [i].type == Token.WORD) {
-					//next token is word
-					string name = tokens [i].value as String;
-					i++;
-					if (tokens [i].type == Token.SYMBOL && (char)tokens [i].value == '=') {
-						//variable declaration, create new variable
-						SymbolTableEntry variable = new SymbolTableEntry () {
-							name = name,
-							type = type,
-							scope = currentscope,
-							isfunc = false
-						};
-						symbolTable.Add (variable);
-						i++;
-						return new Assign () {
-							variable = variable,
-							value = ParseExpr ()
-						};
-					}
-					else if (tokens [i].type == Token.OPENPARAN) {
-							//create function
-							SymbolTableEntry func = new SymbolTableEntry () {
-								name = name,
-								scope = currentscope,
-								isfunc = true,
-								type = type
-							};
-							symbolTable.Add (func);
-							Scope scope = currentscope.SubScope (name);
-							FunctionArg[] args = ParseFuncArgs (scope);
-							i++;
-							STMT body = ParseStmt (scope);
-							return new Function () {
-								symbol = func,
-								args = args,
-								body = body
-							};
-						}
-						else {
-							throw new Exception (String.Format ("Unexpected token: {0} after name", tokens [i].ToString ()));
-						}
-				}
-				else {
-					throw new Exception (String.Format ("Unexpected token: {0} after word", tokens [i].ToString ()));
-				}
-			}
-			else if (symbolTable.Exists (s => s.name == tokens [i].value as String)) {
-					//doing something with a variable
-					SymbolTableEntry variable = symbolTable.Find (s => s.name == tokens [i].value as String);
-					i++;
-				if (tokens [i].type == Token.SYMBOL && (char)tokens [i].value == '=') {
-						i++;
-						EXPR value = ParseExpr ();
-						return new ncc.AST.Assign () {
-							variable = variable,
-							value = value
-						};
-					}
-					else if (tokens[i].type == Token.OPENPARAN) {
-						i++;
-						EXPR args = ParseExpr();
-						i++;
-						return new FUNC_CALL() {
-							name = variable,
-							args = args
-						};
-					} else {
-						throw new Exception (String.Format ("Unexpected token: {0} after variable", tokens [i].ToString ()));
-					}
-				}
-				else {
-					throw new Exception (String.Format ("Unexpected token: {0} after word", tokens [i].ToString ()));
-				}
-		}
-
-		bool IsType (string type)
-		{
-			return typeTable.Exists(p => p.name == type);
-		}	
-
-		TypeDef getType (string type)
-		{
-			return typeTable.Find(p => p.name == type);
 		}
 	}
 }

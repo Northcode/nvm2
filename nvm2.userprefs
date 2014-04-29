@@ -1,57 +1,23 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2/testing/helloworld.asm">
+  <MonoDevelop.Ide.Workbench ActiveDocument="nvm2pp/ram.hpp">
     <Files>
-<<<<<<< HEAD
-      <File FileName="nvm2/virtual-machine/Pager.cs" Line="1" Column="1" />
-      <File FileName="nvm2/virtual-machine/devices/Memory.cs" Line="1" Column="1" />
-      <File FileName="nvm2/Main.cs" Line="1" Column="1" />
-      <File FileName="nvm2/virtual-machine/vm.cs" Line="1" Column="1" />
-      <File FileName="nvm2/virtual-machine/CallStack.cs" Line="1" Column="1" />
-      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="1" Column="1" />
-      <File FileName="nvm2/test-code/hello world.nsm" Line="1" Column="1" />
-      <File FileName="nvm2/testing/bios.txt" Line="1" Column="1" />
-      <File FileName="nvm2/testing/os.nsm" Line="24" Column="7" />
-      <File FileName="nvm2/Assembler/Assembler.cs" Line="1" Column="1" />
-=======
-      <File FileName="nvm2/virtual-machine/Pager.cs" Line="555" Column="1" />
-      <File FileName="nvm2/virtual-machine/devices/Memory.cs" Line="93" Column="1" />
-      <File FileName="nvm2/Main.cs" Line="40" Column="1" />
-      <File FileName="nvm2/virtual-machine/vm.cs" Line="113" Column="1" />
-      <File FileName="nvm2/virtual-machine/CallStack.cs" Line="18" Column="37" />
-      <File FileName="nvm2/virtual-machine/devices/CPU.cs" Line="922" Column="4" />
-      <File FileName="nvm2/test-code/hello world.nsm" Line="1" Column="10" />
-      <File FileName="nvm2/testing/bios.txt" Line="56" Column="4" />
-      <File FileName="nvm2/testing/os.nsm" Line="57" Column="1" />
-      <File FileName="nvm2/Assembler/Assembler.cs" Line="518" Column="26" />
-      <File FileName="ncc/Main.cs" Line="39" Column="35" />
-      <File FileName="ncc/CodeGenerator.cs" Line="43" Column="35" />
-      <File FileName="ncc/AST.cs" Line="323" Column="4" />
-      <File FileName="ncc/samples/stdio.inc" Line="5" Column="17" />
-      <File FileName="nvm2/testing/helloworld.asm" Line="19" Column="7" />
->>>>>>> b6506f0a2d8c8f3a4bc006246d91b5f2cb7c96c2
+      <File FileName="nvm2pp/main.cpp" Line="1" Column="1" />
+      <File FileName="nvm2pp/ram.hpp" Line="7" Column="34" />
+      <File FileName="nvm2pp/vm.hpp" Line="1" Column="1" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
-          <Node name="ncc" expanded="True">
-            <Node name="samples" expanded="True" />
-          </Node>
+          <Node name="ncc" expanded="True" />
           <Node name="nvm2" expanded="True">
-            <Node name="Assembler" expanded="True" />
-            <Node name="testing" expanded="True">
-              <Node name="helloworld.asm" selected="True" />
-            </Node>
-            <Node name="virtual-machine" expanded="True">
-              <Node name="devices" expanded="True" />
-            </Node>
+            <Node name="virtual-machine" expanded="True" />
           </Node>
+          <Node name="nvm2pp" expanded="True" selected="True" />
         </State>
       </Pad>
       <Pad Id="ClassPad">
-        <State expanded="True" selected="True">
-          <Node name="ncc" expanded="True" />
-        </State>
+        <State expanded="True" selected="True" />
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
@@ -59,20 +25,4 @@
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
-  <MonoDevelop.Ide.ItemProperties.nvm2>
-    <MonoDevelop.Ide.CustomExecutionModes>
-      <Data Name="testing" Id="e6fb2d61-7b3d-44a0-b4b3-3ef46cb9e4f1" ModeId="Default">
-        <CommandData>
-          <Item Key="MonoDevelop.Ide.Execution.CustomArgsCustomizer">
-            <Value Arguments="-b bios" WorkingDirectory="/home/andreas/programming/git/nvm2/nvm2/testing" ctype="CustomArgsExecutionModeData">
-              <EnvironmentVariables />
-            </Value>
-          </Item>
-          <Item Key="MonoDevelop.Ide.Execution.MonoExecutionCustomizer">
-            <Value ctype="MonoExecutionParameters" />
-          </Item>
-        </CommandData>
-      </Data>
-    </MonoDevelop.Ide.CustomExecutionModes>
-  </MonoDevelop.Ide.ItemProperties.nvm2>
 </Properties>

@@ -1,348 +1,309 @@
-using System.Text;
+/*
+
+TEST COMPILER LANG
+
+stmt 	:= 	word
+		|	expr
+		|	definition
+		|	assign
+		|	block
+
+expr	:=	string
+		|	int
+		|	decimal
+		|	function_call
+		|	bool
+		|	expr_list
+		|	arith
+		|	factor
+
+expr_list	:=	[expr',']+
+
+definition	:=	function_definition
+			|	class_definition
+
+block		:= stmt* "end"
+
+char	:=	[a-zA-Z]
+int		:=	0-9
+decimal	:=	[int'.'int]
+word	:=	char+[char|int|'_']*
+symbol	:=	[type]* name
+
+function_definition	:=	type name (args) block
+
+name	:=	word
+fargs	:=	[symbol',']*
+
+function_call	:=	name(expr_list)
+
+assign	:=	symbol '=' expr
+
+factor	:=	expr [*|/] expr
+arith	:=	factor [+|-] factor
+
+*/
+
+
 using System;
+using System.Text;
 
 namespace ncc.AST
 {
-	public interface STMT {
-		void ToAsm(StringBuilder sb, CodeGenerator generator);
-	}
-
-	public interface EXPR : STMT {
-		void Push (StringBuilder sb, CodeGenerator generator);
-		void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator);
-	}
-
-	public class BLOCK : STMT
+	public interface stmt
 	{
-		public STMT[] statements;
+
+	}
+
+	public interface expr
+	{
+
+	}
+
+	public class block : stmt
+	{
+		public stmt[] list;
+		public override string ToString ()
+		{
+			StringBuilder sb = new StringBuilder ();
+			foreach (var s in list)
+				sb.AppendLine (s.ToString ());
+			string str = sb.ToString();
+			return string.Format ("[block] {0}",str);
+		}
+	}
+
+	public class expr_list : expr
+	{
+		public expr first;
+		public expr last;
 
 		public override string ToString ()
 		{
-			StringBuilder sb = new StringBuilder();
-			foreach (var s in statements) {
-				sb.AppendLine(s.ToString());
-			}
-			return string.Format ("[BLOCK]\n{0}",sb.ToString());
+			return string.Format ("{0},{1}",first.ToString(),last.ToString());
 		}
-
-		#region STMT implementation
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			foreach (var s in statements) {
-				s.ToAsm(sb,generator);
-			}
-		}
-		#endregion
-
 	}
 
-	public class EXPR_LIST : EXPR {
-		public EXPR[] list;
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			foreach (var e in list) {
-				e.ToAsm(sb,generator);
-			}
-		}
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			foreach (var e in list) {
-				e.Push(sb,generator);
-			}
-		}
-
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
-		{
-			foreach (var e in list) {
-				e.Load(variable,sb,generator);
-			}
-		}
-		#endregion
-
-	}
-
-	public class Assign : STMT {
-		public SymbolTableEntry variable;
-		public EXPR value;
+	public class type
+	{
+		public string Name;
+		public string Value;
 
 		public override string ToString ()
 		{
-			return string.Format ("[Assign] {0} = {1}",variable.name,value.ToString());
-		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			if (value is INT_LIT) {
-				sb.AppendLine (string.Format ("LD DA [{0}]", variable.GetFullName()));
-				sb.AppendLine (string.Format ("LD AX {0}", (value as INT_LIT).value.ToString ()));
-				sb.AppendLine ("WRITEI");
-			} else if (value is STRING_LIT) {
-				value.Push(sb,generator);
-				sb.AppendLine(string.Format("LD AX {0}",(value as STRING_LIT).value.Length + 4));
-				sb.AppendLine("MALLOC");
-				sb.AppendLine("MV DB DA");
-				sb.AppendLine("LD DA [{0}]".f(variable.GetFullName()));
-				sb.AppendLine("WRITEUI");
-				sb.AppendLine("MV DA DB");
-				sb.AppendLine("POPS");
-			}
+			return string.Format ("[{0}]",Name);
 		}
 	}
 
-	public class FunctionArg {
-		public SymbolTableEntry symbol;
-		public TypeDef type;
+	public class @class : type
+	{
+		public symbol[] fields;
+		public type parent;
 	}
 
-	public class Function : STMT {
-		public SymbolTableEntry symbol;
-		public FunctionArg[] args;
-		public STMT body;
+	public class symbol
+	{
+		public type Type;
+		public string Name;
+		public bool isFunc;
+		public bool isPointer;
+	}
+
+	public class args
+	{
+		public symbol[] symbols;
 
 		public override string ToString ()
 		{
-			StringBuilder sb = new StringBuilder();
-			foreach (var s in args) {
-				sb.AppendLine(string.Format("{0} {1},",s.type.name,s.symbol.GetFullName()));
-			}
-			return string.Format ("[FUNCITON] {0} {1} ({2}):\n{3}",symbol.type.name,symbol.name,sb.ToString(),body.ToString());
-		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("{0}:".f (symbol.GetFullName()));
-			foreach (var arg in args) {
-				switch (arg.type.value) {
-				case "int":
-					sb.AppendLine("POPI AX");
-					sb.AppendLine("LD DA [{0}]".f (arg.symbol.GetFullName()));
-					sb.AppendLine("WRITEI");
-					break;
-				case "uint":
-					sb.AppendLine("POPUI DB");
-					sb.AppendLine("LD DA [{0}]".f (arg.symbol.GetFullName()));
-					sb.AppendLine("WRITEUI");
-					break;
-				case "string":
-					sb.AppendLine("POPI AX");
-					sb.AppendLine("PUSHR AX");
-					sb.AppendLine("LD BX 4");
-					sb.AppendLine("ADD INT");
-					sb.AppendLine("MV AX EX");
-					sb.AppendLine("MALLOC");
-					sb.AppendLine("MV DB DA");
-					sb.AppendLine("LD DA [{0}]".f (arg.symbol.GetFullName()));
-					sb.AppendLine("WRITEUI");
-					break;
-				default:
-					break;
-				}
-			}
-			body.ToAsm(sb,generator);
-			sb.AppendLine("RET");
+			StringBuilder sb = new StringBuilder ();
+			foreach (var s in symbols)
+				sb.Append (String.Format ("[{0} {1}]", s.Type.Name, s.Name));
+			return string.Format ("[args {0}]",sb.ToString());
 		}
 	}
 
-	public class ASM_CALL : STMT {
-		public string asm;
+	public class definition : stmt
+	{
+
+	}
+
+	public class function_definition : definition
+	{
+		public symbol Symbol;
+		public args Args;
+		public stmt Body;
 
 		public override string ToString ()
 		{
-			return string.Format ("[ASM] ({0})",asm);
-		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine(asm);
+			return string.Format ("[function] {0} {1} ({2}) {3}",Symbol.Type.ToString(),Symbol.Name,Args.ToString(),Body.ToString());
 		}
 	}
 
-	public class INT_LIT : EXPR {
+	public class ret : stmt
+	{
+		public expr Value;
+
+		public override string ToString ()
+		{
+			return string.Format ("[ret] {0}",Value.ToString());
+		}
+	}
+
+	public class function_call : expr
+	{
+		public symbol Name;
+		public expr Argument;
+
+		public override string ToString ()
+		{
+			return string.Format ("[call] {0} ({1})",Name.Name,Argument.ToString());
+		}
+	}
+
+	public class scope
+	{
+		public string name;
+		public scope parent;
+
+		public string GetFullName()
+		{
+			if (parent != null) return parent.GetFullName () + "_" + name;
+			else return name;
+		}
+	}
+
+	public class assign : stmt
+	{
+		public symbol Name;
+		public expr Value;
+
+		public override string ToString ()
+		{
+			return string.Format ("[assign] {0} = {1}",Name.Name,Value.ToString());
+		}
+	}
+
+	public class assign_pointer : stmt
+	{
+		public symbol Name;
+		public expr Value;
+
+		public override string ToString ()
+		{
+			return string.Format ("[assign_ptr] {0} = {1}",Name.Name,Value.ToString());
+		}
+	}
+
+	public enum op 
+	{
+		plus,
+		minus,
+		mul,
+		div
+	}
+
+	public class factor : expr
+	{
+		public expr Term1;
+		public op Op;
+		public expr Term2;
+
+		public override string ToString ()
+		{
+			return string.Format ("[factor] ({0}) {1} ({2})",Term1.ToString(),Op.ToString(),Term2.ToString());
+		}
+	}
+
+	public class arith : expr
+	{
+		public expr Factor1;
+		public op Op;
+		public expr Factor2;
+		
+		public override string ToString ()
+		{
+			return string.Format ("[arith] ({0}) {1} ({2})",Factor1.ToString(),Op.ToString(),Factor2.ToString());
+		}
+	}
+
+	public class stringl : expr
+	{
+		public string value;
+
+		public override string ToString ()
+		{
+			return string.Format ("\"{0}\"",value);
+		}
+	}
+
+	public class intl : expr
+	{
 		public int value;
 
 		public override string ToString ()
 		{
-			return value.ToString();
+			return string.Format ("{0}",value);
 		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			throw new NotImplementedException();
-		}
-
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("PUSHI {0}".f (value));
-		}
-
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("LD DA [{0}]".f (variable.GetFullName()));
-			sb.AppendLine("LD AX {0}".f (value));
-			sb.AppendLine("WRITEI");
-		}
-		#endregion
-
 	}
 
-	public class CHAR_LIT : EXPR {
-		public char value;
+	public class decimall : expr
+	{
+		public double value;
 
 		public override string ToString ()
 		{
-			return value.ToString();
+			return string.Format ("{0}",value);
 		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			throw new NotImplementedException();
-		}
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("PUSHB '{0}'".f(value));
-		}
-
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("LD DA [{0}]".f (variable.GetFullName()));
-			sb.AppendLine("LD A '{0}'".f(value));
-			sb.AppendLine("WRITEB");
-		}
-		#endregion
-
 	}
 
-	public class BYTE_LIT : EXPR {
-		public byte value;
-
-		public override string ToString ()
-		{
-			return value.ToString();
-		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			throw new NotImplementedException();
-		}
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("PUSHB {0}".f(value));
-		}
-
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("LD DA [{0}]".f (variable.GetFullName()));
-			sb.AppendLine("LD A {0}".f(value));
-			sb.AppendLine("WRITEB");
-		}
-		#endregion
-
-	}
-
-	public class STRING_LIT : EXPR {
-		public string value;
-		public string vname;
-
-		public override string ToString ()
-		{
-			return value;
-		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			throw new NotImplementedException();
-		}
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("LD DA [{0}]".f (generator.StringConst(value)));
-			sb.AppendLine("LODS");
-		}
-
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("LD DB [{0}]".f (generator.StringConst(value)));
-			sb.AppendLine("LD DA [{0}]".f (variable.GetFullName()));
-			sb.AppendLine("WRITEUI");
-		}
-		#endregion
-
-	}
-
-	public class BOOL_LIT : EXPR {
+	public class booll : expr
+	{
 		public bool value;
 
 		public override string ToString ()
 		{
-			return value.ToString();
+			return string.Format ("{0}",value);
 		}
-
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			throw new NotImplementedException();
-		}
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("PUSHB {0}".f((value ? 1 : 0)));
-		}
-
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
-		{
-			sb.AppendLine("LD DA [{0}]".f (variable.GetFullName()));
-			sb.AppendLine("LD A {0}".f((value ? 1 : 0)));
-			sb.AppendLine("WRITEB");
-		}
-		#endregion
-
 	}
 
-	public class FUNC_CALL : EXPR {
-		public SymbolTableEntry name;
-		public EXPR args;
+	public class charl : expr
+	{
+		public char value;
 
 		public override string ToString ()
 		{
-			return string.Format("{0}({1})",name.GetFullName(),args.ToString());
+			return string.Format ("{0}",value);
 		}
+	}
 
-		public void ToAsm (StringBuilder sb, CodeGenerator generator)
-		{
-			args.Push(sb,generator);
-			sb.AppendLine("CALL [{0}]".f (name.GetFullName()));
-		}
-		#region EXPR implementation
-		public void Push (StringBuilder sb, CodeGenerator generator)
-		{
-			ToAsm(sb,generator);
-		}
+	public class getVar : expr
+	{
+		public symbol Symbol;
 
-		public void Load (SymbolTableEntry variable, StringBuilder sb, CodeGenerator generator)
+		public override string ToString ()
 		{
-			if (variable.type.value == "int") {
-				sb.AppendLine ("POPI AX");
-				sb.AppendLine ("LD DA [{0}]".f (variable.GetFullName ()));
-				sb.AppendLine ("WRITEI");
-			} else if (variable.type.value == "string") {
-				sb.AppendLine("POPI AX");
-				sb.AppendLine("PUSHR AX");
-				sb.AppendLine("LD BX 4");
-				sb.AppendLine("ADD INT");
-				sb.AppendLine("MV AX EX");
-				sb.AppendLine("MALLOC");
-				sb.AppendLine("MV DB DA");
-				sb.AppendLine("LD DA [{0}]".f (variable.GetFullName()));
-				sb.AppendLine("WRITEUI");
-				sb.AppendLine("MV DA DB");
-				sb.AppendLine("POPS");
-			}
+			return string.Format ("[getVar] {0}",Symbol.Name);
 		}
-		#endregion
+	}
 
+	public class deref_pointer : expr
+	{
+		public symbol Symbol;
+
+		public override string ToString ()
+		{
+			return string.Format ("[deref_pointer] *{0}",Symbol.Name);
+		}
+	}
+
+	public class get_address : expr
+	{
+		public symbol Symbol;
+
+		public override string ToString ()
+		{
+			return string.Format ("[get_address] &{0}",Symbol.Name);
+		}
 	}
 }
+
