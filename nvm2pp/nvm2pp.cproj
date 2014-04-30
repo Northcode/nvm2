@@ -37,7 +37,7 @@
     <None Include="vm.hpp" />
     <None Include="device.hpp" />
     <None Include="devices\cpu.hpp" />
-    <None Include="nsm_def.txt" />
+    <None Include="nsm_def.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="devices\" />
