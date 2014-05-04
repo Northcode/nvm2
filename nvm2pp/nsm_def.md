@@ -64,6 +64,13 @@ JMPR r			- jump to address of register r
 
 CALLR r			- call address of register r
 
+JE a			- jump if comparator register is 1
+
+JN a			- jump if comparator reg is 0
+
+JER	r			- like JE, uses register
+
+JNR r			- like JN uses register
 
 ### Math
 
@@ -89,3 +96,15 @@ STACKFREE	- free an object from the stack
 MALLOC		- alloc an object of size eax to the heap
 
 FREE		- free an object in the heap at address esi and eax
+
+### Interupts
+
+INT	i		- fire interupt i
+
+RSI i		- register software interupt i
+
+SWI i		- software interupt i
+
+### Comparison
+
+LT r r

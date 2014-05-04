@@ -12,7 +12,6 @@ byte ltob (long int l) { return l & 0xf; }
 
 class vm
 {
-private:
 public:
 
 	ram memory;
