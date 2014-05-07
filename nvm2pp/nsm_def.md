@@ -54,38 +54,51 @@ READRL r ra 	- read long from address of register ra
 
 ### Jumping
 
-JMP a 			- jump to address a
+-- For all jumping, if t=1, a is a register
 
-CALL a 			- call address a
+JMP t a 		- jump to address a
+
+CALL t a 		- call address a
 
 RET				- return on callstack
 
-JMPR r			- jump to address of register r
+JEQ t a			- jump if equal
 
-CALLR r			- call address of register r
+JNE t a			- jump if not equal
 
-JE a			- jump if comparator register is 1
+JLT t a			- jump if comparator is less than
 
-JN a			- jump if comparator reg is 0
+JLE t a			- jump if comparator is less than or equal
 
-JER	r			- like JE, uses register
+JGE t a			- jump if comparator is greater than
 
-JNR r			- like JN uses register
+JGT t a			- jump if comparator is greater than or equal
 
 ### Math
 
-ADD a b		- add a to b
+-- for all math, t = 0,1,2,3 for byte,short,int and long operations
 
-SUB a b		- subtract a from b
+ADD t a b		- add a to b
 
-MUL a b		- multiply a to b
+SUB t a b		- subtract a from b
 
-DIV a b		- divide a by b
+MUL t a b		- multiply a to b
 
-POW a b		- a to the power of b
+DIV t a b		- divide a by b
 
-SQRT a		- sqare root of a
+POW t a b		- a to the power of b
 
+SQRT t a		- sqare root of a
+
+## Binary math
+
+OR t r r		- binary OR on two registers
+
+AND t r r		- binary AND on two registers
+
+XOR t r r		- binary XOR on two registers
+
+NOT t r			- binary NOT on a register
 
 ### Memory allocation
 
@@ -107,4 +120,8 @@ SWI i		- software interupt i
 
 ### Comparison
 
-LT r r
+CMPB r,r	- compare bytes
+
+CMPI r,r	- compare ints
+
+CMPL r,r	- compare longs
