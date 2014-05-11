@@ -38,6 +38,7 @@
     <None Include="device.hpp" />
     <None Include="devices\cpu.hpp" />
     <None Include="nsm_def.md" />
+    <None Include="pager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="devices\" />

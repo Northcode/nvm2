@@ -8,13 +8,13 @@ LDI r v 		- load int to register
 LDL r v 		- load long to register
 
 
-MOVB t f 		- move byte from register f -> t
+MOV t f     - copy value from register f to register t
 
-MOVI t f 		- move int from register f -> t
+MOV t [a]  - copy value from address a to register t
 
-MOVL t f 		- move long from register f -> t
+MOV t [r+o] - copy value from address of register r with offest o
 
-
+MOV [a] t   - copy value from register t to address a
 ### stack opcodes
 PUSHB v 		- push byte to stack
 
