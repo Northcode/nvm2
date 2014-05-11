@@ -34,6 +34,11 @@ public:
 	long rsi;
 	long rdi;
 
+	int cs;
+	int ds;
+	int ss;
+	int es;
+
 	bool CARRY;
 	bool PARITY;
 	bool ADJUST;
@@ -56,6 +61,7 @@ public:
 	long cr1;
 	long cr2;
 	int cr3;
+
 
 	//Sub Registers
 	int eax() {	return ltoi(rax); }
