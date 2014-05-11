@@ -5,17 +5,16 @@ using namespace std;
 
 int main()
 {
-	pageDirectoryEntry pde{0};
-	pde.present = true;
-	pde.accessed = true;
-	pde.readwrite = true;
-	pde.address = 2;
-	int p = pde;
+	pageAddress pa{0};
+	pa.ptindex = 5;
+	pa.page = 3;
+	pa.offset = 10;
+	int p = pa;
 	for(int i = 0; i < 32; i++)
 		cout << ((p >> i) & 0x1) << ",";
 	cout << endl;
-	pde = pageDirectoryEntry(p);
-	cout << pde.present << " " << pde.accessed << " " << pde.address << endl;
+	pa = pageAddress(p);
+	cout << pa.ptindex << " " << pa.page << " " << pa.offset << endl;
 	
 	
 	return 0;

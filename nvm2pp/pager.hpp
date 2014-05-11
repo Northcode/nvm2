@@ -33,10 +33,36 @@ struct pageDirectoryEntry
 		v |= (readwrite << 1);
 		v |= (mode << 2);
 		v |= (writethrough << 3);
-		v |= (chachedisabled << 4);
+		v |= (chachedisabled << 4); 
 		v |= (accessed << 5);
 		v |= (size << 7);
 		v |= (address << 11);
+		return v;
+	}
+};
+
+struct pageTableEntry
+{
+	
+};
+
+struct pageAddress
+{
+	int ptindex;
+	int page;
+	int offset;
+	
+	pageAddress(int address) {
+		ptindex = address & 0x3ff;
+		page = (address & 0xffc00) >> 10;
+		offset = address >> 20;
+	}
+	
+	operator int() {
+		int v = 0;
+		v |= ptindex;
+		v |= (page << 10);
+		v |= (offset << 20);
 		return v;
 	}
 };
