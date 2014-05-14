@@ -6,7 +6,7 @@ bool getBit(int value, int bit) {
 	return value & (1 << bit);
 }
 
-struct pageDirectoryEntry
+struct pageTable
 {
 	bool present;
 	bool readwrite;
@@ -17,7 +17,9 @@ struct pageDirectoryEntry
 	bool size;
 	int address;
 
-	pageDirectoryEntry(int value) {
+	pageTable() : pageTable(0) {}
+
+	pageTable(int value) {
 		present 		= getBit(value,0);
 		readwrite 		= getBit(value,1);
 		mode 			= getBit(value,2);
@@ -42,7 +44,7 @@ struct pageDirectoryEntry
 	}
 };
 
-struct pageTableEntry
+struct page
 {
 	bool present;
 	bool readwrite;
@@ -54,7 +56,9 @@ struct pageTableEntry
 	bool global;
 	int address;
 
-	pageTableEntry(int value) {
+	page() : page(0) {}
+
+	page(int value) {
 		present 		= getBit(value,0);
 		readwrite 		= getBit(value,1);
 		mode 			= getBit(value,2);
@@ -104,32 +108,40 @@ struct pageAddress
 
 class TLB
 {
-	std::vector<pageDirectoryEntry> pageDirectoryCache;
-	std::vector<pageTableEntry> pageTableCache;
+	std::vector<pageTable> pageDirectoryCache;
+	std::vector<page> pageTableCache;
 public:
 
 	TLB() {
-		pageDirectoryCache = vector<pageDirectoryEntry>(1024);
+		this->pageDirectoryCache = std::vector<pageTable>(1024);
 	}
 
 	void flush() {
-		pageTableCache = vector<pageTableEntry>(1024);
+		this->pageTableCache = std::vector<page>(1024);
 	}
 
 	void updatePTCache(int address,std::shared_ptr<ram> memory) {
+		flush();
 		for(int i = 0; i < 1024; i++) {
 			int entry{memory->readInt(address + i * 4)};
-			pageTableEntry pte{entry};
-			pageTableCache[i] = pte;
+			pageTableCache[i] = page(entry);
 		}
 	}
 
-	std::shared_ptr<pageDirectoryEntry> getPT(int index) {
-		return std::shared_ptr<pageDirectoryEntry>(pageDirectoryEntry[index]);
+	pageTable getPageTable(int index) {
+		return pageDirectoryCache[index];
 	}
 
-	pageTableEntry getPage(int index) {
-		return std::shared_ptr<pageDirectoryEntry>(pageTableEntry[index]);
+	void setPageTable(int index, pageTable entry) {
+		pageDirectoryCache[index] = entry;
+	}
+
+	page getPage(int index) {
+		return pageTableCache[index];
+	}
+
+	void setPage(int index, page entry) {
+		pageTableCache[index] = entry;
 	}
 };
 
