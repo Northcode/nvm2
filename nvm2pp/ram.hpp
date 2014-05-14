@@ -36,16 +36,26 @@ public:
 	ram(int size) {
 		data = std::vector<unsigned char>(size);
 		frames = std::vector<frame>(size/FRAME_SIZE);
+    fillFrames();
 	}
 
 	frame getFrame(int index) {
 		return frames[index];
 	}
 
-	std::shared_ptr<frame> findFreeFrame() {
-		auto f = find_if(begin(this->frames),end(this->frames),[&](const frame& f) { return f.isFree; });
-		return std::make_shared<frame>(*f);
+  void fillFrames() {
+    for(int i = 0; i < frames.size(); i++) {
+      frames[i].address = i * 4096;
+    }
+  }
+
+	std::vector<frame>::iterator findFreeFrame() {
+		return find_if(begin(this->frames),end(this->frames),[&](const frame& f) { return f.isFree; });
 	}
+
+  void setFrameState(int index, bool state) {
+    frames[index].isFree = state;
+  }
 
 	//write functions
 	void write(int address, unsigned char value) {
@@ -56,10 +66,6 @@ public:
 		std::vector<unsigned char> bval = ToBytes(value);
 		for(int i = 0; i < 4; i++)
 			write(address + i, bval[i]);
-	}
-
-	void write(int address, std::string value) {
-		
 	}
 
 	unsigned char read(int address) {

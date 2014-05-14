@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
-#include "ram.hpp"
 #include <memory>
+#include "ram.hpp"
 
 constexpr int CALLSTACK_SIZE{512};
 
@@ -15,11 +15,14 @@ class vm
 {
 public:
 
+	//Helper classes and ram
 	std::unique_ptr<ram> memory;
+	TLB tlb;
 
 	vm()
 	{
 		memory = std::unique_ptr<ram>(new ram(4*1024));
+		tlb = TLB();
 	}
 
 	// Registers
@@ -64,7 +67,7 @@ public:
 
 
 	//Sub Registers
-	int eax() {	return ltoi(rax); }
+	int eax() { return ltoi(rax); }
 	int ebx() { return ltoi(rbx); }
 	int ecx() { return ltoi(rcx); }
 	int edx() { return ltoi(rdx); }
@@ -149,5 +152,10 @@ public:
 	    PRIVILEGE1		=	nflags[13];
 	    NESTED				=	nflags[14];
 	    F3						=	nflags[15];
+	}
+
+	void alloc_pagetable(int index) {
+		auto freeFrame = memory->findFreeFrame();
+		
 	}
 };

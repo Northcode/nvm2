@@ -6,6 +6,13 @@ bool getBit(int value, int bit) {
 	return value & (1 << bit);
 }
 
+struct memblock
+{
+	int size;
+	int address;
+	std::unique_ptr<memblock> next;
+};
+
 struct pageTable
 {
 	bool present;
@@ -108,44 +115,28 @@ struct pageAddress
 
 class TLB
 {
-	std::vector<pageTable> pageDirectoryCache;
-	std::vector<page> pageTableCache;
 public:
+	std::vector<pageTable> pageDirectory;
+	std::vector<page> pagetable;
 
 	TLB() {
-		this->pageDirectoryCache = std::vector<pageTable>(1024);
+		this->pageDirectory = std::vector<pageTable>(1024);
+		this->pagetable = std::vector<page>(1024);
 	}
 
 	void flush() {
-		this->pageTableCache = std::vector<page>(1024);
+		this->pagetable.clear();
+	}
+
+	void flushD() {
+		this->pageDirectory.clear();
 	}
 
 	void updatePTCache(int address,std::shared_ptr<ram> memory) {
 		flush();
 		for(int i = 0; i < 1024; i++) {
 			int entry{memory->readInt(address + i * 4)};
-			pageTableCache[i] = page(entry);
+			pagetable[i] = page(entry);
 		}
 	}
-
-	pageTable getPageTable(int index) {
-		return pageDirectoryCache[index];
-	}
-
-	void setPageTable(int index, pageTable entry) {
-		pageDirectoryCache[index] = entry;
-	}
-
-	page getPage(int index) {
-		return pageTableCache[index];
-	}
-
-	void setPage(int index, page entry) {
-		pageTableCache[index] = entry;
-	}
-};
-
-class pager
-{
-
 };
