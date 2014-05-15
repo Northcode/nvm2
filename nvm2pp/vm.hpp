@@ -2,10 +2,11 @@
 #include <iostream>
 #include <memory>
 #include "ram.hpp"
+#include "pager.hpp"
+#include "types.hpp"
 
 constexpr int CALLSTACK_SIZE{512};
 
-typedef unsigned char byte ;
 
 int ltoi(long l) { return l & (0xffff); }
 short ltos(long l) { return l & (0xff); }
@@ -154,8 +155,82 @@ public:
 	    F3						=	nflags[15];
 	}
 
+	void enable_paging() {
+		cr0 |= (true << 31);
+	}
+
+	void disable_paging() {
+		cr0 |= (false << 31);
+	}
+
 	void alloc_pagetable(int index) {
-		auto freeFrame = memory->findFreeFrame();
-		
+		bool paging = cr0 & (1 << 31);
+		if(paging) {
+			//Find free frame
+			auto freeFrame = memory->findFreeFrame();
+			//Create page table
+			pageTable pt{0};
+			freeFrame->isFree = false;
+			pt.address = freeFrame->address;
+			pt.present = true;
+			pt.readwrite = true;
+			pt.cachedisabled = true;
+			pt.accessed = false;
+			pt.size = false;
+			//Store page table in page directory
+			write_page_table(cr3 + index * 4, pt);
+		}
+	}
+
+	void write_page_table(int address, pageTable pt) {
+		memory->write(address,(int)pt);
+	}
+
+	void alloc_page(int pt, bool mode) {
+		bool paging = cr0 & (1 << 31);
+		if(paging) {
+			//Find free frame
+			auto freeFrame = memory->findFreeFrame();
+			//Create page
+			page pg{0};
+			freeFrame->isFree = false;
+			pg.address = freeFrame->address;
+			pg.present = true;
+			pg.readwrite = true;
+			pg.mode = mode;
+			pg.cachedisabled = true;
+			//write page to page table
+			write_page(pt,pg);
+		}
+	}
+
+	void write_page(int pt, page pg) {
+		//read page table address
+		int pti = memory->readInt(cr3 + pt*4);
+		pageTable ptc{pti};
+		int addr = ptc.address;
+		//Look for free page slot
+		for(int i = 0; i < 1024; i++) {
+			int pgi = memory->readInt(addr + i * 4);
+			page pgc{pgi};
+			if(!pgc.present) {
+				memory->write(addr + i * 4, (int)pg);
+				return;
+			}
+		}
+	}
+
+	void free_page(int pt, int pg) {
+		//get address of page table
+		int pti = memory->readInt(cr3 + pt*4);
+		pageTable ptc{pti};
+		int addr = ptc.address;
+
+		//clear present bit in page
+		memory->write(addr + pg * 4, false);
+	}
+
+	void free_pagetable(int pt) {
+		memory->write(cr3 + pt * 4, false);
 	}
 };

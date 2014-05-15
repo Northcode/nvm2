@@ -19,7 +19,7 @@ struct pageTable
 	bool readwrite;
 	bool mode;
 	bool writethrough;
-	bool chachedisabled;
+	bool cachedisabled;
 	bool accessed;
 	bool size;
 	int address;
@@ -31,7 +31,7 @@ struct pageTable
 		readwrite 		= getBit(value,1);
 		mode 			= getBit(value,2);
 		writethrough 	= getBit(value,3);
-		chachedisabled 	= getBit(value,4);
+		cachedisabled 	= getBit(value,4);
 		accessed 		= getBit(value,5);
 		size 			= getBit(value,7);
 		address			= value >> 11;
@@ -43,7 +43,7 @@ struct pageTable
 		v |= (readwrite << 1);
 		v |= (mode << 2);
 		v |= (writethrough << 3);
-		v |= (chachedisabled << 4);
+		v |= (cachedisabled << 4);
 		v |= (accessed << 5);
 		v |= (size << 7);
 		v |= (address << 11);
@@ -57,7 +57,7 @@ struct page
 	bool readwrite;
 	bool mode;
 	bool writethrough;
-	bool chachedisabled;
+	bool cachedisabled;
 	bool accessed;
 	bool dirty;
 	bool global;
@@ -70,7 +70,7 @@ struct page
 		readwrite 		= getBit(value,1);
 		mode 			= getBit(value,2);
 		writethrough 	= getBit(value,3);
-		chachedisabled 	= getBit(value,4);
+		cachedisabled 	= getBit(value,4);
 		accessed 		= getBit(value,5);
 		dirty 			= getBit(value,7);
 		global			= getBit(value,8);
@@ -83,7 +83,7 @@ struct page
 		v |= (readwrite << 1);
 		v |= (mode << 2);
 		v |= (writethrough << 3);
-		v |= (chachedisabled << 4);
+		v |= (cachedisabled << 4);
 		v |= (accessed << 5);
 		v |= (dirty << 7);
 		v |= (global << 8);
